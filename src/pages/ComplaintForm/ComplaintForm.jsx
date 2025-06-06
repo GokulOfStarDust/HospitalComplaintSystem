@@ -43,6 +43,11 @@ const DecodeBase64Component = () => {
         formData.append("issue_type", data.issue_type);
         formData.append("priority", data.priority);
         formData.append("description", data.description);
+        formData.append("floor", decodedData.Floor_no);
+        formData.append("ward", decodedData.ward);
+        formData.append("room_status", decodedData.status);
+        formData.append("speciality", decodedData.speciality);
+        formData.append("room_type", decodedData.room_type);
 
         files.forEach((file, index) => {
             formData.append("image", file); 
@@ -59,6 +64,8 @@ const DecodeBase64Component = () => {
         .catch(err => {
             console.error("Upload failed:", err);
         });
+
+        reset();
     }
 
     useEffect(() => {

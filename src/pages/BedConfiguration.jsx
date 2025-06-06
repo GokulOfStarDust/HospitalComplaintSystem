@@ -189,7 +189,7 @@ import handleQRCodePrint, {QRCodePrinter} from './PrintQRCode';
                                         <td className='py-3 pr-3 text-left'>{record.room_type}</td>
                                         <td className='py-3 pr-3 text-left'>{record.status}</td>
                                         <td className="align-middle py-3 pr-3">
-                                        <div className="flex items-center justify-center gap-x-2">
+                                        <div className="flex items-center justify-start gap-x-2">
                                             <img src="editIcon.jpg" alt="" className="size-9 flex-shrink-0 hover:cursor-pointer" />
                                             <img src="deleteIcon.jpg" alt="" 
                                             onClick={() => {

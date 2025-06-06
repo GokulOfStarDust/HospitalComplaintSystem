@@ -18,13 +18,3 @@ select {
   cursor: pointer;
   background-color: white;
 }
-
-select.decorated {
-  @apply border border-gray-300 rounded-md p-2 text-sm;
-}
-select.decorated option:hover {
-    box-shadow: 0 0 10px 100px #1882A8 inset;
-}
-option:hover {
-  background-color: yellow;
-}
