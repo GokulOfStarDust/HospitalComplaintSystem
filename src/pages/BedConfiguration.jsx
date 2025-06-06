@@ -72,7 +72,7 @@ import handleQRCodePrint, {QRCodePrinter} from './PrintQRCode';
                                 }
                             )
                         })
-                        setRoomQRCode(dataForQr);
+                        setRoomQRCode( prev => prev === undefined ? [...dataForQr] : [...prev, ...dataForQr]);                       
                         console.log('Fetched rows:', tableContent);
                     } else {
                         console.error('Failed to fetch rows:', response.statusText);
@@ -170,14 +170,23 @@ import handleQRCodePrint, {QRCodePrinter} from './PrintQRCode';
                                             <input type="checkbox" 
                                             onChange={() => {
                                                 if(record.status === 'active') {
-                                                    setRoomQRCode(prev =>{
+                                                    setRoomQRCode(prev =>
                                                         prev.map(item => {
-                                                            item?.id === record.id ? {...item, toPrint: !item.toPrint} : item
-                                                        })
-                                                    })
+                                                            if( item?.id === record.id){
+                                                                return {
+                                                                    ...item, toPrint: !item.toPrint
+                                                                }
+                                                            }
+                                                            else {
+                                                                return item;
+                                                            }
+                                                        }
+                                                        )
+                                                    )
+                                                    console.log('Checkbox clicked for record:', record.id);
                                             }
                                             }}
-                                            checked={roomQR.find(item => item?.id === record.id)?.toPrint || false}
+                                            checked={Array.isArray(roomQR) && roomQR.find(item => item?.id === record.id)?.toPrint || false}
                                             name="" id="" className=' accent-primary size-5 ml-7'/>
                                         </td>
                                         <td className='py-3 pr-3 text-left'>{record.bed_no}</td>
