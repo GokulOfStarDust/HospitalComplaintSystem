@@ -1,11 +1,14 @@
 import React, { useState, useEffect} from 'react'
 import { useSearchParams } from 'react-router';
+import TicketDetailForm from './TicketDetailForm';
 
 function TicketSystem() {
 
     const [tableContent, setTableContent] = React.useState([]);
     const [pageNumber, setPageNumber] = useState(1);
     const [searchParams, setSearchParams] = useSearchParams();
+    const [viewTicket, setViewTicket] = useState(false);
+    const [complaintData, setComplaintData] = useState(null);
 
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
@@ -49,9 +52,6 @@ function TicketSystem() {
         try {
             const response = await fetch(`http://127.0.0.1:8000/api/complaints/?page=${pageNumber}`, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
             });
             if (!response.ok) {
                 throw new Error('Network response was not ok');
@@ -250,7 +250,12 @@ return (
                                                 </td>
                                                 <td className="w-[5%] align-middle py-3">
                                                     <div className="flex items-center justify-start gap-x-2">
-                                                        <img src="eyeViewIcon.svg" alt="" className="size-8 flex-shrink-0 hover:cursor-pointer" />
+                                                        <img src="eyeViewIcon.svg" alt="" 
+                                                        onClick={() => {
+                                                            setViewTicket(!viewTicket);
+                                                            setComplaintData(record);
+                                                        }}
+                                                        className="size-8 flex-shrink-0 hover:cursor-pointer" />
                                                         <img src="complaintDeleteIcon.svg" alt="" 
                                                         onClick={() => {
                                                             deleteRows(record.ticket_id)
@@ -299,6 +304,17 @@ return (
                 
                 
             </section>
+            {viewTicket && 
+
+            <>
+            <TicketDetailForm complaintData={complaintData} viewTicket={viewTicket} setViewTicket={setViewTicket}/>
+            <div className='absolute w-screen h-screen top-0 left-0 bg-black/50 z-10' onClick={() => setViewTicket(false)}>
+
+            </div>
+            </>
+
+            
+            }
     </main>
 )
 }

@@ -49,9 +49,12 @@ const DecodeBase64Component = () => {
         formData.append("speciality", decodedData.speciality);
         formData.append("room_type", decodedData.room_type);
 
+
         files.forEach((file, index) => {
-            formData.append("image", file); 
+            formData.append("images", file); 
         });
+
+        console.log("Form Data to Uploaded:", data);
 
         fetch("http://127.0.0.1:8000/api/complaints/", {
             method: "POST",
@@ -106,7 +109,7 @@ const DecodeBase64Component = () => {
                 <section className='flex flex-col items-start justify-center p-3 gap-y-2'>
                     <div>
                         <p className='text-secondary text-sm'>Room Details</p>
-                        <p className='text-[#202020] text-md'>{decodedData.Block} / {decodedData.Floor_no} / {decodedData.ward} / {decodedData.room_no}</p>
+                        <p className='text-[#202020] text-md'>{decodedData.Block} Block / Floor {decodedData.Floor_no} / {decodedData.ward} / {decodedData.room_no}</p>
                     </div>
                     <div>
                         <p className='text-secondary text-sm'>Room Status</p>
