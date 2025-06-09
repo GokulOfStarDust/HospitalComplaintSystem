@@ -72,7 +72,10 @@ import handleQRCodePrint, {QRCodePrinter} from './PrintQRCode';
                                 }
                             )
                         })
-                        setRoomQRCode( prev => prev === undefined ? [...dataForQr] : [...prev, ...dataForQr]);                       
+                        setRoomQRCode( prev => {
+                            const filteredData = dataForQr.filter((item, index)=> item.id !== prev[index]?.id);
+                            return [...prev, ...filteredData];
+                        });                       
                         console.log('Fetched rows:', tableContent);
                     } else {
                         console.error('Failed to fetch rows:', response.statusText);

@@ -28,7 +28,7 @@ const complaintData = {
 
 function TicketDetailForm() {
 
-    const [value, setValue] = useState(complaintData.description || '');
+    const [description, setDescription] = useState(complaintData.description || '');
   return (
     <main>
         <section className='flex flex-row'>
@@ -79,8 +79,8 @@ function TicketDetailForm() {
                     Description
                 </p>
                 <MDEditor
-                    value={value}
-                    onChange={(val) => setValue(val || '')}
+                    value={description}
+                    onChange={(val) => setDescription(val || '')}
                     preview="edit"
                     height={200}
                     data-color-mode="light"
