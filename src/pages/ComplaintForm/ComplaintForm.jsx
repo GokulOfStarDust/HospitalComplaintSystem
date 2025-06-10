@@ -9,6 +9,8 @@ const DecodeBase64Component = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const [files, setFiles] = useState([]);
+    const [signature, setSignature] = useState(null);
+    const [encodedData, setEncodedData] = useState(null);
 
     // uploads the news files with the existing files
     const uploadOnChange = (e) => {
@@ -49,6 +51,9 @@ const DecodeBase64Component = () => {
         formData.append("speciality", decodedData.speciality);
         formData.append("room_type", decodedData.room_type);
 
+        formData.append("qr_data_from_qr", encodedData);
+        formData.append("qr_signature_from_qr", signature);
+
 
         files.forEach((file, index) => {
             formData.append("images", file); 
@@ -62,7 +67,7 @@ const DecodeBase64Component = () => {
         })
         .then(res => res.json())
         .then(response => {
-            console.log("Server response:", response);
+            console.log("Success Server response:", response);
         })
         .catch(err => {
             console.error("Upload failed:", err);
@@ -73,6 +78,7 @@ const DecodeBase64Component = () => {
 
     useEffect(() => {
         const base64String = searchParams.get('data');
+        setEncodedData(base64String);
         if(!base64String) {
             navigate('/'); // Redirect to home if no data is found
             return;
@@ -81,18 +87,19 @@ const DecodeBase64Component = () => {
         try {
             const decodedString = atob(base64String);
             const jsonData = JSON.parse(decodedString);
+            setSignature(searchParams.get('signature'));
+            console.log("Signature:", searchParams.get('signature'));
+            console.log("Base64 String:", base64String);
             console.log("Decoded Data:", jsonData);
             setDecodedData(jsonData);
         } catch (error) {
             console.error("Error decoding base64 string:", error);
             navigate('/'); // Redirect to home if no data is found
             return;
-        }
-        
-        
-
-        
+        }        
     }, [searchParams, navigate]);
+
+    useEffect(() => {reset()},[decodedData])
 
     if (!decodedData) {
         return <p className="text-center">Loading...</p>;
@@ -124,6 +131,7 @@ const DecodeBase64Component = () => {
                             className='w-[90%] md:w-[55%] rounded-md outline outline-[1px] outline-gray-300 p-2'
                             {...register("issue_type", { required: true })}
                             id="issueType">
+                                <option value="" disabled></option>
                                 <option value="cleanliness">Cleanliness</option>
                                 <option value="electrical">Electrical</option>
                                 <option value="plumbing">Plumbing</option>
@@ -137,6 +145,7 @@ const DecodeBase64Component = () => {
                             className='w-[90%] md:w-[55%] rounded-md outline outline-[1px] outline-gray-300 p-2'
                             {...register("priority", { required: true })}
                             name="priority" id="priority">
+                                <option value="" disabled></option>
                                 <option value="low">Low</option>
                                 <option value="medium">Medium</option>
                                 <option value="high">High</option>

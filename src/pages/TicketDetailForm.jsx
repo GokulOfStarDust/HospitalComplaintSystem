@@ -30,25 +30,25 @@
     //     ]
     // };
 
-    const updateFormHandler = async (data, ticket_id) => {
+    const updateFormHandler = async (data, ticket_id, fetchRows, pageNumber) => {
         
         try {
 
+            console.log("Data to be updated:", data);
             const formData = new FormData();
 
             formData.append("description", data.description);
             data.images.forEach((file, index) => {
-                if (file instanceof File) {
-                    formData.append(`new_images`, file);
-                }
-                else if (file.image) {
-                    formData.append(`existing_images`, file.image);
-                }   
+               formData.append(`images`, file);   
             });
 
-            console.log("Form Data to be Updated:", data);
+//             console.log("FormData contents:");
+//             for (const [key, value] of formData.entries()) {
+//             console.log(key, value);
+// }
 
-            const res = await fetch(`http://127.0.0.1:8000/api/complaints/${ticket_id}/`, {
+
+        const res = await fetch(`http://127.0.0.1:8000/api/complaints/${ticket_id}/`, {
                 method: "PATCH",
                 body: formData,
             });
@@ -57,6 +57,7 @@
 
             if (res.ok) {
                 alert('Ticket updated successfully!');
+                fetchRows(pageNumber);
             } else {
                 alert(`Failed to update ticket: ${json.detail || "Unknown error"}`);
             }
@@ -70,7 +71,7 @@
 
 
 
-    function TicketDetailForm({complaintData, setViewTicket, viewTicket}) {
+    function TicketDetailForm({complaintData, setViewTicket, viewTicket, fetchRows, pageNumber}) {
 
         console.log("Complaint Data:", complaintData);
         const [isEditable, setIsEditable] = useState(false);
@@ -165,31 +166,38 @@
                                 <label className='text-secondary text-sm' htmlFor="uploadFile" key="upload-label">Attachment</label>
                                 <div className='flex flex-row gap-x-4 ' key="upload-container"> 
 
-                                        <div className={`${files.length == 0 ? "hidden" : "flex"} flex-col w-[60%] min-w-[205px] bg-white`} key="files-list">
+                                        <div className={`${files.length == 0 ? "hidden" : "flex"} flex-col w-[30%] min-w-[205px] bg-white`} key="files-list">
                                                 {files.map((file, index) => (
                                                         <div key={`file-${index}`} className='flex flex-row items-center w-[100%] border'>
-                                                                <img className='p-3' src="photoIcon.svg" alt="" key={`photo-icon-${index}`} />
-                                                                <p className="w-[60%] py-2 text-secondary" key={`file-name-${index}`}>
-                                                                        {file.name}
-                                                                </p>
-                                                                <button
+                                                                <img className='p-3' src="photoIcon.svg" alt="" key={`photo-icon-${index}`} href={`${file.image}`} />
+                                                                 <a
+                                                                    href={file.image || URL.createObjectURL(file)}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="text-secondary w-[60%] py-2 hover:underline underline-offset-1"
+                                                                    key={`file-link-${index}`}
+                                                                    >
+                                                                    {file.name}
+                                                                </a>
+                                                                {/* <button
                                                                 key={`delete-btn-${index}`}
                                                                 type="button"
                                                                 onClick={() => handleDeleteFile(index)}
                                                                 className="text-red-600 hover:text-red-800 ml-auto px-3"
                                                                 >
                                                                         <img src="deleteFileIcon.svg" alt="" />
-                                                                </button>
+                                                                </button> */}
 
                                                         </div>
                                                 ))}
                                         </div>
                                         <div key="upload-button-container">
                                                 <label htmlFor="uploadFile" key="upload-button-label">
-                                                        <img src="uploadButtonIcon.svg" alt="" />
+                                                        <img className={`${isEditable ? "" : "grayscale"}`} src="uploadButtonIcon.svg" alt="" />
                                                 </label>
                                                 <input
                                                         key="file-input"
+                                                        disabled={!isEditable}
                                                         className='hidden w-[90%] md:w-[35%] rounded-md outline outline-[1px] outline-gray-300 p-2'
                                                         type="file"
                                                         name= "upload_file"
@@ -250,7 +258,7 @@
                                 ticket_id: complaintData.ticket_id,
                                 description: description,
                                 images: files
-                            }, complaintData.ticket_id)    
+                            }, complaintData.ticket_id, fetchRows, pageNumber)    
                             alert('Ticket updated successfully!')
                             setIsEditable(false)
                             }}

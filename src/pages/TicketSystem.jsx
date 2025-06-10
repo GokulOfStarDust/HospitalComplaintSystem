@@ -307,7 +307,7 @@ return (
             {viewTicket && 
 
             <>
-            <TicketDetailForm complaintData={complaintData} viewTicket={viewTicket} setViewTicket={setViewTicket}/>
+            <TicketDetailForm complaintData={complaintData} viewTicket={viewTicket} setViewTicket={setViewTicket} fetchRows = {fetchRows} pageNumber={pageNumber}/>
             <div className='absolute w-screen h-screen top-0 left-0 bg-black/50 z-10' onClick={() => setViewTicket(false)}>
 
             </div>

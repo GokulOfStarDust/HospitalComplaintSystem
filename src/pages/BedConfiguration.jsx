@@ -18,6 +18,8 @@ import handleQRCodePrint, {QRCodePrinter} from './PrintQRCode';
         const [roomQR, setRoomQRCode] = useState([]);
         const [tableContent, setTableContent] = useState([]);
         const [pageNumber, setPageNumber] = useState(1);
+        const [isEditable, setIsEditable] = useState(false);
+        const [idToEdit, setIdToEdit] = useState(null);
 
 
         const {
@@ -29,11 +31,12 @@ import handleQRCodePrint, {QRCodePrinter} from './PrintQRCode';
 
         const formDataHandler = async (data) => {
 
-            reset();
+            const METHOD = isEditable ? 'PUT' : 'POST';
+            const url = isEditable ? `http://127.0.0.1:8000/api/rooms/${idToEdit}/` : 'http://127.0.0.1:8000/api/rooms/'
             data.status = data.status ? 'active' : 'inactive'; 
             
-            const response = await fetch('http://127.0.0.1:8000/api/rooms/', {
-                method: 'POST',
+            const response = await fetch(url, {
+                method: METHOD,
                 headers: {
                     'Content-Type': 'application/json',
                 },
@@ -42,13 +45,27 @@ import handleQRCodePrint, {QRCodePrinter} from './PrintQRCode';
 
             if (response.ok) {
                 const data = await response.json();
+                reset(
+                    {
+                        bed_no: '',
+                        room_no: '',
+                        Floor_no: '',
+                        Block: '',
+                        room_type: '',
+                        speciality: '',
+                        ward: '',
+                        status: false,
+                    }
+                );
                 fetchRows(); 
+                setIdToEdit(null);
+                setIsEditable(false);
+                
             } else {
                 console.error('Error:', response.statusText);
             }
 
-            reset();
-            
+            reset()
         };
 
         useEffect(() => {
@@ -202,7 +219,22 @@ import handleQRCodePrint, {QRCodePrinter} from './PrintQRCode';
                                         <td className='py-3 pr-3 text-left'>{record.status}</td>
                                         <td className="align-middle py-3 pr-3">
                                         <div className="flex items-center justify-start gap-x-2">
-                                            <img src="editIcon.jpg" alt="" className="size-9 flex-shrink-0 hover:cursor-pointer" />
+                                            <img src="editIcon.jpg" alt=""
+                                            onClick={() => {
+                                                setIsEditable(true);
+                                                reset({
+                                                    bed_no: record.bed_no,
+                                                    room_no: record.room_no,
+                                                    Floor_no: record.Floor_no,
+                                                    Block: record.Block,
+                                                    room_type: record.room_type,
+                                                    speciality: record.speciality,
+                                                    ward: record.ward,
+                                                    status: record.status === 'active' ? true : false
+                                                });
+                                                setIdToEdit(record.id);
+                                            }}  
+                                            className="size-9 flex-shrink-0 hover:cursor-pointer" />
                                             <img src="deleteIcon.jpg" alt="" 
                                             onClick={() => {
                                                 deleteRows(record.id)
@@ -348,9 +380,15 @@ import handleQRCodePrint, {QRCodePrinter} from './PrintQRCode';
                     className='w-[20%] h-[4vh] bg-[#FAF9F9] text-gray-700 rounded-md outline outline-1 outline-gray-600 hover:bg-[#E0E0E0] transition duration-300 ease-in-out'>
                         Reset   
                     </button>
-                    <button type='submit' form='bedForm' className='w-[20%] h-[4vh] bg-[#04B7B1] text-white rounded-md hover:bg-[#03A6A0] transition duration-300 ease-in-out'>
-                        Submit
-                    </button>
+                    {isEditable ?
+                        <button 
+                        type='submit' form='bedForm' className='w-[20%] h-[4vh] bg-[#04B7B1] text-white rounded-md hover:bg-[#03A6A0] transition duration-300 ease-in-out'>
+                            Update
+                        </button> :
+                        <button type='submit' form='bedForm' className='w-[20%] h-[4vh] bg-[#04B7B1] text-white rounded-md hover:bg-[#03A6A0] transition duration-300 ease-in-out'>
+                            Submit
+                        </button>
+                    }
                 </div>
             </section>
          </main>
