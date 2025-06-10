@@ -1,5 +1,5 @@
 import React,{useEffect, useState} from 'react'
-    import { set, useForm } from 'react-hook-form';
+    import { useForm } from 'react-hook-form';
 import handleQRCodePrint, {QRCodePrinter} from './PrintQRCode';
 
     function BedConfiguration() {
@@ -57,9 +57,20 @@ import handleQRCodePrint, {QRCodePrinter} from './PrintQRCode';
                         status: false,
                     }
                 );
+
+                if (isEditable) {
+                    setRoomQRCode((prev) =>
+                        prev.map((item) =>
+                        item.id === idToEdit
+                            ? { ...item, qrCodeUrl: data.qr_code, toPrint: false , status: data.status }
+                            : item
+                        )
+                    );
+                }
                 fetchRows(); 
                 setIdToEdit(null);
                 setIsEditable(false);
+                
                 
             } else {
                 console.error('Error:', response.statusText);
@@ -132,7 +143,7 @@ import handleQRCodePrint, {QRCodePrinter} from './PrintQRCode';
             }
         };
 
-        useEffect(() => {console.log(roomQR)},[roomQR])
+        useEffect(() => {console.log("room QR :", roomQR)},[roomQR])
 
         useEffect(() => {console.log(tableContent)},[tableContent])
 
@@ -206,7 +217,7 @@ import handleQRCodePrint, {QRCodePrinter} from './PrintQRCode';
                                                     console.log('Checkbox clicked for record:', record.id);
                                             }
                                             }}
-                                            checked={Array.isArray(roomQR) && roomQR.find(item => item?.id === record.id)?.toPrint || false}
+                                            checked={!!roomQR?.find(item => item?.id === record.id)?.toPrint}
                                             name="" id="" className=' accent-primary size-5 ml-7'/>
                                         </td>
                                         <td className='py-3 pr-3 text-left'>{record.bed_no}</td>
@@ -376,10 +387,19 @@ import handleQRCodePrint, {QRCodePrinter} from './PrintQRCode';
                 </div>
                 
                 <div className='flex flex-row items-center justify-center gap-x-2 bg-[#FAF9F9] p-2 rounded-b-xl'>
-                    <button type='button' onClick={()=>{reset()}} form='bedForm' 
-                    className='w-[20%] h-[4vh] bg-[#FAF9F9] text-gray-700 rounded-md outline outline-1 outline-gray-600 hover:bg-[#E0E0E0] transition duration-300 ease-in-out'>
-                        Reset   
-                    </button>
+                    {isEditable ?
+                        <button type='button' onClick={()=>{reset(); setIsEditable(false)}} form='bedForm' 
+                        className='w-[20%] h-[4vh] bg-[#FAF9F9] text-gray-700 rounded-md outline outline-1 outline-gray-600 hover:bg-[#E0E0E0] transition duration-300 ease-in-out'>
+                            Cancel   
+                        </button>
+                        :
+                        <button type='button' onClick={()=>{reset()}} form='bedForm' 
+                        className='w-[20%] h-[4vh] bg-[#FAF9F9] text-gray-700 rounded-md outline outline-1 outline-gray-600 hover:bg-[#E0E0E0] transition duration-300 ease-in-out'>
+                            Reset   
+                        </button>
+                        
+                    }
+    
                     {isEditable ?
                         <button 
                         type='submit' form='bedForm' className='w-[20%] h-[4vh] bg-[#04B7B1] text-white rounded-md hover:bg-[#03A6A0] transition duration-300 ease-in-out'>
