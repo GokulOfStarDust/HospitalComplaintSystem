@@ -108,6 +108,8 @@ const DecodeBase64Component = () => {
             console.log("Complaint submitted successfully:", response.data);
             alert("Complaint submitted successfully!");
             reset();
+            setFiles([]);
+            
         } catch (error) {
             console.error("Error submitting complaint:", error.response?.statusText || error.message);
             alert("Failed to submit complaint. Please try again.");
