@@ -2,33 +2,8 @@
     import MDEditor from '@uiw/react-md-editor';
     import '@uiw/react-md-editor/markdown-editor.css';
     import '@uiw/react-markdown-preview/markdown.css';
-
-    // const complaintData = {
-    //     "ticket_id": "SVN30151",
-    //     "submitted_at": "2025-06-05T10:59:42.977435Z",
-    //     "bed_number": "696",
-    //     "block": "A Block",
-    //     "room_number": "A Room",
-    //     "floor": "3 Floor",
-    //     "ward": "Operation",
-    //     "speciality": "Cardiology",
-    //     "room_type": "Medium",
-    //     "room_status": "active",
-    //     "issue_type": "Electrical",
-    //     "description": "ADASDADSSA",
-    //     "priority": "medium",
-    //     "submitted_by": "Anonymous",
-    //     "status": "open",
-    //     "assigned_department": null,
-    //     "resolved_by": null,
-    //     "resolved_at": null,
-    //     "remarks": null,
-    //     "images": [
-    //         {
-    //             "image": "http://127.0.0.1:8000/media/qr_codes/qr_code_A234_12_YMaH7Fy.png"
-    //         },
-    //     ]
-    // };
+    import axios from 'axios';
+    import { BASE_URL, COMPLAINT_URL } from './Url';
 
     const updateFormHandler = async (data, ticket_id, fetchRows, pageNumber) => {
         
@@ -47,8 +22,7 @@
 //             console.log(key, value);
 // }
 
-
-        const res = await fetch(`http://127.0.0.1:8000/api/complaints/${ticket_id}/`, {
+        const res = await fetch(`${BASE_URL}${COMPLAINT_URL}${ticket_id}/`, {
                 method: "PATCH",
                 body: formData,
             });
@@ -68,7 +42,6 @@
 
         console.log("Update Data:", data);
     }
-
 
 
     function TicketDetailForm({complaintData, setViewTicket, viewTicket, fetchRows, pageNumber}) {
@@ -91,10 +64,12 @@
             e.target.value = null
         }
 
-        const handleDeleteFile = (indexToDelete) => {
-            const updatedFiles = files.filter((_, index)=> index !== indexToDelete)
-            setFiles(updatedFiles)
-        }
+        //The funtionality to delete files is commented out for now, but can be implemented later 
+
+        // const handleDeleteFile = (indexToDelete) => {
+        //     const updatedFiles = files.filter((_, index)=> index !== indexToDelete)
+        //     setFiles(updatedFiles)
+        // }
 
 
     return (

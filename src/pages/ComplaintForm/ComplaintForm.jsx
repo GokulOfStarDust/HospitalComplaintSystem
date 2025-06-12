@@ -1,10 +1,13 @@
-    import React, { use, useEffect, useState, useRef } from 'react';
-    import { useSearchParams } from 'react-router';
-    import { useNavigate } from 'react-router';
-    import { set, useForm } from 'react-hook-form';
-    import '../../index.css'; 
+import React, { use, useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'react-router';
+import { useNavigate } from 'react-router';
+import axios from 'axios';
+import { set, useForm } from 'react-hook-form';
+import { BASE_URL } from '../Url';
+import { COMPLAINT_URL, ISSUE_CATEGORY_URL } from '../Url';
+import '../../index.css'; 
 
-    const DecodeBase64Component = () => {
+const DecodeBase64Component = () => {
     const [decodedData, setDecodedData] = useState(null);
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -13,6 +16,7 @@
     const [encodedData, setEncodedData] = useState(null);
     const [timeLeft, setTimeLeft] = useState(100);
     const [sessionId, setSessionId] = useState(null);
+    const [issueCategories, setIssueCategories] = useState([]);
     const {
         register,
         reset,
@@ -21,15 +25,7 @@
         formState: { errors },
     } = useForm();
 
-    // const hasInitializedSession = useRef(false);
-
     useEffect(() => {
-
-        // if (hasInitializedSession.current) {
-        //     console.log('Session already initialized, skipping');
-        //     return;
-        // }
-
         const existingSession = sessionStorage.getItem('sessionId');
         console.log('Checking for existing session:', existingSession);
         if (existingSession) {
@@ -41,121 +37,124 @@
         const newSessionId = `session_${Date.now()}`;
         setSessionId(newSessionId);
         sessionStorage.setItem('sessionId', newSessionId);
-        setTimeLeft(10);
+        setTimeLeft(600);
         console.log('Session started:', newSessionId);
-        // hasInitializedSession.current = true;
     }, [navigate]);
 
-  useEffect(() => {
-    if (timeLeft <= 0) {
-      sessionStorage.removeItem('sessionId');
-      navigate('/sessionExpired');
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      setTimeLeft(timeLeft - 1);
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [timeLeft, navigate]);
-
-//   useEffect(() => {
-//     const handleUnload = () => {
-//       sessionStorage.removeItem('sessionId');
-//     };
-//     window.addEventListener('beforeunload', handleUnload);
-//     return () => window.removeEventListener('beforeunload', handleUnload);
-//   }, []);
-
-        // uploads the news files with the existing files
-        const uploadOnChange = (e) => {
-            const newFiles = Array.from(e.target.files);
-            const updatedFiles = [...files, ...newFiles];
-            setFiles(updatedFiles);
-            setValue("upload_file", updatedFiles);
-
-            e.target.value = null
+    useEffect(() => {
+        if (timeLeft <= 0) {
+            sessionStorage.removeItem('sessionId');
+            navigate('/sessionExpired');
+            return;
         }
 
-        const handleDeleteFile = (indexToDelete) => {
-            const updatedFiles = files.filter((_, index)=> index !== indexToDelete)
-            setFiles(updatedFiles)
-            setValue("upload_file", updatedFiles);
-        }
+        const timer = setTimeout(() => {
+            setTimeLeft(timeLeft - 1);
+        }, 1000);
 
+        return () => clearTimeout(timer);
+    }, [timeLeft, navigate]);
 
-        const formSubmitHandler = async (data) => {
-            const formData = new FormData();
+    const uploadOnChange = (e) => {
+        const newFiles = Array.from(e.target.files);
+        const updatedFiles = [...files, ...newFiles];
+        setFiles(updatedFiles);
+        setValue("upload_file", updatedFiles);
 
-            formData.append("room_number", decodedData.room_no);
-            formData.append("block", decodedData.Block);
-            formData.append("bed_number", decodedData.bed_no);
-            formData.append("issue_type", data.issue_type);
-            formData.append("priority", data.priority);
-            formData.append("description", data.description);
-            formData.append("floor", decodedData.Floor_no);
-            formData.append("ward", decodedData.ward);
-            formData.append("room_status", decodedData.status);
-            formData.append("speciality", decodedData.speciality);
-            formData.append("room_type", decodedData.room_type);
+        e.target.value = null;
+    };
 
-            formData.append("qr_data_from_qr", encodedData);
-            formData.append("qr_signature_from_qr", signature);
+    const handleDeleteFile = (indexToDelete) => {
+        const updatedFiles = files.filter((_, index) => index !== indexToDelete);
+        setFiles(updatedFiles);
+        setValue("upload_file", updatedFiles);
+    };
 
+    const formSubmitHandler = async (data) => {
+        const formData = new FormData();
 
-            files.forEach((file, index) => {
-                formData.append("images", file); 
+        formData.append("room_number", decodedData.room_no);
+        formData.append("block", decodedData.Block);
+        formData.append("bed_number", decodedData.bed_no);
+        formData.append("issue_type", data.issue_type);
+        formData.append("priority", data.priority);
+        formData.append("description", data.description);
+        formData.append("floor", decodedData.Floor_no);
+        formData.append("ward", decodedData.ward);
+        formData.append("room_status", decodedData.status);
+        formData.append("speciality", decodedData.speciality);
+        formData.append("room_type", decodedData.room_type);
+        formData.append("qr_data_from_qr", encodedData);
+        formData.append("qr_signature_from_qr", signature);
+
+        files.forEach((file) => {
+            formData.append("images", file);
+        });
+
+        console.log("Form Data to Uploaded:", data);
+
+        try {
+            const response = await axios.post(`${BASE_URL}${COMPLAINT_URL}`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
             });
-
-            console.log("Form Data to Uploaded:", data);
-            
-            try {
-                const response =  await fetch("http://127.0.0.1:8000/api/complaints/", {
-                    method: "POST",
-                    body: formData,
-                })
-                if (!response.ok) {
-                    throw new Error("Failed to submit complaint");
-                }
-                const result = await response.json();
-                console.log("Complaint submitted successfully:", result);
-                alert("Complaint submitted successfully!");
-            } catch (error) {
-                console.error("Error submitting complaint:", error);
-                alert("Failed to submit complaint. Please try again.");
-            }
+            console.log("Complaint submitted successfully:", response.data);
+            alert("Complaint submitted successfully!");
             reset();
+        } catch (error) {
+            console.error("Error submitting complaint:", error.response?.statusText || error.message);
+            alert("Failed to submit complaint. Please try again.");
+        }
+    };
+
+    const fetchIssueCategories = async () => {
+        try {
+            const response = await axios.get(`${BASE_URL}${ISSUE_CATEGORY_URL}`);
+            const categories = response.data.results;
+            setIssueCategories(categories);
+            console.log("Issue Categories:", categories);
+        } catch (error) {
+            console.error("Error fetching issue categories:", error);   
+            alert("Failed to fetch issue categories. Please try again.");
+            return [];
+        }
+    };
+
+    useEffect(() => {
+        fetchIssueCategories()}, 
+    [])
+
+    useEffect(() => {
+        const base64String = searchParams.get('data');
+        setEncodedData(base64String);
+        if (!base64String) {
+            navigate('/');
+            return;
         }
 
-        useEffect(() => {
-            const base64String = searchParams.get('data');
-            setEncodedData(base64String);
-            if(!base64String) {
-                navigate('/'); // Redirect to home if no data is found
-                return;
-            }
-
-            try {
-                const decodedString = atob(base64String);
-                const jsonData = JSON.parse(decodedString);
-                setSignature(searchParams.get('signature'));
-                console.log("Signature:", searchParams.get('signature'));
-                console.log("Base64 String:", base64String);
-                console.log("Decoded Data:", jsonData);
-                setDecodedData(jsonData);
-            } catch (error) {
-                console.error("Error decoding base64 string:", error);
-                navigate('/'); // Redirect to home if no data is found
-                return;
-            }        
-        }, [searchParams, navigate]);
-
-        useEffect(() => {reset()},[decodedData])
-
-        if (!decodedData) {
-            return <p className="text-center">Loading...</p>;
+        try {
+            const decodedString = atob(base64String);
+            const jsonData = JSON.parse(decodedString);
+            setSignature(searchParams.get('signature'));
+            console.log("Signature:", searchParams.get('signature'));
+            console.log("Base64 String:", base64String);
+            console.log("Decoded Data:", jsonData);
+            setDecodedData(jsonData);
+        } catch (error) {
+            console.error("Error decoding base64 string:", error);
+            navigate('/');
+            return;
         }
+    }, [searchParams, navigate]);
+
+    useEffect(() => {
+        reset();
+    }, [decodedData]);
+
+    if (!decodedData) {
+        return <p className="text-center">Loading...</p>;
+    }
 
         return (
             // 

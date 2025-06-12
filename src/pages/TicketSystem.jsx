@@ -1,10 +1,12 @@
 import React, { useState, useEffect} from 'react'
 import { useSearchParams } from 'react-router';
 import TicketDetailForm from './TicketDetailForm';
+import axios from 'axios';
+import { BASE_URL, COMPLAINT_URL } from './Url';
 
 function TicketSystem() {
 
-    const [tableContent, setTableContent] = React.useState([]);
+    const [tableContent, setTableContent] = useState([]);
     const [pageNumber, setPageNumber] = useState(1);
     const [searchParams, setSearchParams] = useSearchParams();
     const [viewTicket, setViewTicket] = useState(false);
@@ -14,83 +16,65 @@ function TicketSystem() {
         const { name, value } = e.target;
         if (value) {
             searchParams.set(name, value);
-        }
-        else {
+        } else {
             searchParams.delete(name);
         }
         setSearchParams(searchParams);
     };
 
-    useEffect(() =>{
-        
+    useEffect(() => {
         const params = Object.fromEntries(searchParams.entries());
         console.log("Search Params:", params);
         const queryString = new URLSearchParams(params).toString();
         fetchFilteredRows(queryString);
-    },[searchParams])
+    }, [searchParams]);
 
     const fetchFilteredRows = async (queryString) => {
         try {
-            const response = await fetch(`http://127.0.0.1:8000/api/complaints/?page=${pageNumber}${queryString ? `&${queryString}` : ''}`, {
-                method: 'GET',
+            const response = await axios.get(`${BASE_URL}${COMPLAINT_URL}?page=${pageNumber}${queryString ? `&${queryString}` : ''}`, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
             });
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const data = await response.json();
-            setTableContent(data);
-            console.log("Filtered Table Content:", data);
+            setTableContent(response.data);
+            console.log("Filtered Table Content:", response.data);
         } catch (error) {
-            console.error('Error fetching filtered data:', error);
+            console.error('Error fetching filtered data:', error.response?.statusText || error.message);
         }
     };
 
-    const fetchRows = async (pageNumber) => {
+    const fetchRows = async () => {
         try {
-            const response = await fetch(`http://127.0.0.1:8000/api/complaints/?page=${pageNumber}`, {
-                method: 'GET',
-            });
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const data = await response.json();
-            setTableContent(data);
-            console.log("Table Content:", data);
+            const response = await axios.get(`${BASE_URL}${COMPLAINT_URL}?page=${pageNumber}`);
+            setTableContent(response.data);
+            console.log("Table Content:", response.data);
         } catch (error) {
-            console.error('Error fetching data:', error);
+            console.error('Error fetching data:', error.response?.statusText || error.message);
         }
     };
 
     useEffect(() => {
-        fetchRows(pageNumber);
-        
+        fetchRows();
     }, [pageNumber]);
 
     const deleteRows = async (ticket_id) => {
         try {
-            const response = await fetch(`http://127.0.0.1:8000/api/complaints/${ticket_id}/`, {
-                method: 'DELETE',
+            await axios.delete(`${BASE_URL}${COMPLAINT_URL}${ticket_id}/`, {
                 headers: {
                     'Content-Type': 'application/json',
                 },
             });
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            const data = response;
-            console.log("Delete Response:", data);
-            fetchRows(pageNumber);
-            setTableContent(prev => ({
-                        ...prev, results: prev.results.filter(item => item.ticket_id !== ticket_id)
-                    }));
-
+            console.log("Row deleted successfully");
+            setTableContent((prev) => ({
+                ...prev,
+                results: prev.results.filter((item) => item.ticket_id !== ticket_id),
+            }));
+            fetchRows();
         } catch (error) {
-            console.error('Error deleting data:', error);
+            console.error('Error deleting data:', error.response?.statusText || error.message);
         }
     };
+
     
     
 return (
@@ -185,8 +169,8 @@ return (
         </section>
 
         <section className='w-[98%] ml-4 flex flex-col rounded-md bg-white flex-1 min-h-0'>
-                <div className='h-14 w-full self-end my-2 pr-9 flex flex-row items-center justify-end gap-x-4'>
-                    <input className='h-10 w-[20%] focus:outline-none border-b-[1px]  ' type="text" />
+                <div className='h-14 w-full self-end mb-2 -mt-2 pr-9 flex flex-row items-center justify-end gap-x-4'>
+                    <input className='h-10 w-[20%] focus:outline-none border-b-[1px]' type="text" />
                 </div>
                 
                 <div className='flex flex-col flex-1 min-h-0'>
@@ -200,7 +184,7 @@ return (
                                 <th className='text-sm w-[5%] font-medium text-left'>Ticket ID</th>
                                 <th className='text-sm w-[5%] font-medium text-left'>Room Details</th>
                                 <th className='text-sm w-[5%] font-medium text-left'>Submitted By</th>
-                                <th className='text-sm w-[5%] font-medium text-left'>Issue Type</th>
+                                <th className='text-sm w-[4%] font-medium text-left'>Issue Type</th>
                                 <th className='text-sm w-[14%] font-medium text-left'>Issue Description</th>
                                 <th className='text-sm w-[5%] font-medium text-left'>Ticket Status</th>
                                 <th className='text-sm w-[5.5%] font-medium text-left'>Assigned Department</th>
@@ -217,7 +201,7 @@ return (
                                 {Array.isArray(tableContent.results) && 
                                     tableContent.results.map((record,index)=>{
                                         return(
-                                            <tr key={record.ticket_id} className='text-md bg-white border-b border-gray-200 hover:bg-[#FAF9F9] h-5'>
+                                            <tr key={record.ticket_id} className='text-sm bg-white border-b border-gray-200 hover:bg-[#FAF9F9] h-5'>
                                                 <td className='w-[3%]'>
                                                     <input type="checkbox" 
                                                     name="" id="" className=' accent-primary size-5 ml-7'/>
@@ -230,7 +214,7 @@ return (
                                                     </div>
                                                 </td>
                                                 <td className='w-[5%] py-3 text-left'>{record.submitted_by}</td>
-                                                <td className='w-[5%] py-3 text-left'>{record.issue_type}</td>
+                                                <td className='w-[4%] py-3 text-left'>{record.issue_type}</td>
                                                 <td className='w-[14%] py-3 text-left'>{record.description}</td>
                                                 <td className='w-[5%] py-3 text-left'>{record.status}</td>
                                                 <td className='w-[5.5%] py-3 text-left'>{record.assigned_department}</td>
