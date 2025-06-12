@@ -91,6 +91,12 @@ const DecodeBase64Component = () => {
             formData.append("images", file);
         });
 
+            console.log("FormData contents:");
+            for (const [key, value] of formData.entries()) {
+            console.log(key, value);
+}
+
+
         console.log("Form Data to Uploaded:", data);
 
         try {
@@ -183,10 +189,11 @@ const DecodeBase64Component = () => {
                                 {...register("issue_type", { required: true })}
                                 id="issueType">
                                     <option value="" disabled></option>
-                                    <option value="cleanliness">Cleanliness</option>
-                                    <option value="electrical">Electrical</option>
-                                    <option value="plumbing">Plumbing</option>
-                                    <option value="other">Other</option>
+                                    {issueCategories.map((category) => (
+                                        <option key={category.issue_category_code} value={category.issue_category_name}>
+                                            {category.issue_category_name}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
 

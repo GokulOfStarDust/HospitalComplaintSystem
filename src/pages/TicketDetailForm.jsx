@@ -85,12 +85,12 @@
                                 <p className='text-sm text-secondary' key="room-info-summary">{complaintData.room_number} / {complaintData.block} / {complaintData.floor}</p>
                         </div>
                         <div key="edit-button " className='flex flex-row items-center justify-center gap-x-2'>
-                                <img
-                                onClick={() => setViewTicket(!viewTicket)}
-                                src="closeIcon.png" alt="" className='p-3 bg-slate-950 hover:cursor-pointer' />
                                 <img 
                                 onClick={() => setIsEditable(!isEditable)}
                                 src="ticketDetailFormEditIcon.png" alt="edit Icon" className='size-9' />
+                                <img
+                                onClick={() => setViewTicket(!viewTicket)}
+                                src="closeIcon.png" alt="" className='p-3 bg-slate-950 hover:cursor-pointer' />
                         </div>
                 </section>
 
