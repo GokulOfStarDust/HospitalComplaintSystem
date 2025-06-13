@@ -1,7 +1,29 @@
 import React,{useEffect, useState} from 'react'
-import { set, useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import axios from 'axios';
 import handleQRCodePrint, {QRCodePrinter} from './PrintQRCode';
+import {
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Checkbox,
+  FormControlLabel,
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton,
+  Menu,
+  MenuItem as MenuItemComponent,
+} from "@mui/material"
+import { Edit, Delete, MoreVert } from "@mui/icons-material"
+
 import { BASE_URL, ROOMS_URL } from './Url';
 
 function BedConfiguration() {
@@ -25,6 +47,7 @@ function BedConfiguration() {
     const [masterChecked, setMasterChecked] = useState(false);
 
     const {
+        control,
         register,
         reset,
         handleSubmit,

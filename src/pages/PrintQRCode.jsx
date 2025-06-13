@@ -1,5 +1,4 @@
-import React from 'react';
-    
+
 const handleQRCodePrint = (roomQR) => {
     const selectedQRs = roomQR.filter(item => item?.toPrint);
     if (selectedQRs.length === 0) {

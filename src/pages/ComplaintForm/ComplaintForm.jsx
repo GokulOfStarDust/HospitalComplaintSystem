@@ -169,13 +169,13 @@ const DecodeBase64Component = () => {
             <main className='min-h-screen flex flex-col items-center justify-center px-4 bg-gray-50'>
                 <section className='w-[95%] md:w-[80%] lg:w-[50%] bg-white p-4 border border-gray-300 rounded-lg shadow-sm divide-y-[1px] divide-[#D7D7D7]'>
                     <section className='flex flex-col items-start justify-center w-full p-3'>
-                        <p className='text-[#202020] text-md font-sans italic'>Raise Ticket</p>
+                        <p className='text-[#202020] text-base font-sans italic'>Raise Ticket</p>
                         <p className='text-secondary text-sm'>Use this form to raise ticket or issue</p>
                     </section>
                     <section className='flex flex-col items-start justify-center p-3 gap-y-2'>
                         <div>
                             <p className='text-secondary text-sm'>Room Details</p>
-                            <p className='text-[#202020] text-md'>{decodedData.Block} Block / Floor {decodedData.Floor_no} / {decodedData.ward} / {decodedData.room_no}</p>
+                            <p className='text-[#202020] text-base'>{decodedData.Block} Block / Floor {decodedData.Floor_no} / {decodedData.ward} / {decodedData.room_no}</p>
                         </div>
                         <div>
                             <p className='text-secondary text-sm'>Room Status</p>
