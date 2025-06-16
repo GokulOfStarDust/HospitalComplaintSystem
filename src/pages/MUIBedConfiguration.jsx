@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import axios from 'axios';
@@ -36,22 +35,24 @@ function MUIBedConfiguration() {
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedRowId, setSelectedRowId] = useState(null);
 
+  const defaultValues = {
+    bed_no: '',
+    room_no: '',
+    Floor_no: '',
+    Block: '',
+    room_type: '',
+    speciality: '',
+    ward: '',
+    status: false,
+  };
+
   const {
     control,
     handleSubmit,
     reset,
     formState: { errors },
   } = useForm({
-    defaultValues: {
-      bed_no: '',
-      room_no: '',
-      Floor_no: '',
-      Block: '',
-      room_type: '',
-      speciality: '',
-      ward: '',
-      status: false,
-    },
+    defaultValues,
   });
 
   const formDataHandler = async (data) => {
@@ -69,7 +70,6 @@ function MUIBedConfiguration() {
         },
       });
 
-      reset();
       if (isEditable) {
         setRoomQRCode((prev) =>
           prev.map((item) =>
@@ -82,6 +82,7 @@ function MUIBedConfiguration() {
       fetchRows();
       setIdToEdit(null);
       setIsEditable(false);
+      reset(defaultValues); // Explicitly reset form to default values
     } catch (error) {
       console.error('Error:', error.response?.statusText || error.message);
     }
@@ -480,7 +481,7 @@ function MUIBedConfiguration() {
                     <Select
                       {...field}
                       variant="outlined"
-                      sx={{ borderRadius: '0.375rem', height: '5.2vh' }}
+                      sx={{ height: '5.2vh', borderRadius: '0.375rem' }}
                     >
                       <MenuItem value="" disabled></MenuItem>
                       <MenuItem value="General">General</MenuItem>
@@ -557,16 +558,7 @@ function MUIBedConfiguration() {
               onClick={() => {
                 setIsEditable(false);
                 setIdToEdit(null);
-                reset({
-                  bed_no: '',
-                  room_no: '',
-                  Floor_no: '',
-                  Block: '',
-                  room_type: '',
-                  speciality: '',
-                  ward: '',
-                  status: false,
-                });
+                reset(defaultValues);
               }}
             >
               Cancel
@@ -582,18 +574,7 @@ function MUIBedConfiguration() {
                 borderColor: '#616161',
                 '&:hover': { backgroundColor: '#E0E0E0', borderColor: '#616161' },
               }}
-              onClick={() =>
-                reset({
-                  bed_no: '',
-                  room_no: '',
-                  Floor_no: '',
-                  Block: '',
-                  room_type: '',
-                  speciality: '',
-                  ward: '',
-                  status: false,
-                })
-              }
+              onClick={() => reset(defaultValues)}
             >
               Reset
             </Button>

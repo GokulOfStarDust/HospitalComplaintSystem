@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useSearchParams } from 'react-router-dom'; // Changed to react-router-dom
 import MUITicketDetailForm from './MUITicketDetailForm';
 import axios from 'axios';
-import { BASE_URL, COMPLAINT_URL } from './Url';
-import SearchIcon from '@mui/icons-material/Search';
+import { BASE_URL, COMPLAINT_URL, ISSUE_CATEGORY_URL, DEPARTMENT_URL } from './Url';
 import { MoreVert } from '@mui/icons-material';
 import {
   Box,
@@ -22,8 +21,9 @@ import {
   IconButton,
   Checkbox,
   Typography,
-  InputAdornment,
+  InputAdornment
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
 
 function MUITicketSystem() {
   const [tableContent, setTableContent] = useState({ results: [] });
@@ -32,6 +32,8 @@ function MUITicketSystem() {
   const [viewTicket, setViewTicket] = useState(false);
   const [complaintData, setComplaintData] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [issues, setIssues] = useState([]);
+  const [departments, setDepartments] = useState([]);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -71,11 +73,42 @@ function MUITicketSystem() {
     try {
       const response = await axios.get(`${BASE_URL}${COMPLAINT_URL}?page=${pageNumber}`);
       setTableContent(response.data);
+      fetchIssues();
+      fetchDepartments();
       console.log('Table Content:', response.data);
     } catch (error) {
       console.error('Error fetching data:', error.response?.statusText || error.message);
     }
   };
+
+  const fetchIssues = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}${ISSUE_CATEGORY_URL}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      setIssues(response.data.results);
+    } catch (error) {
+      console.error('Error fetching issue details:', error.response?.statusText || error.message);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try{
+      const response = await axios.get(`${BASE_URL}${DEPARTMENT_URL}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      setDepartments(response.data.results);
+    }
+    catch (error) {
+      console.error('Error fetching department details:', error.response?.statusText || error.message);
+    }
+  };
+
 
   useEffect(() => {
     fetchRows();
@@ -219,10 +252,11 @@ function MUITicketSystem() {
               sx={{ borderRadius: '4px', bgcolor: 'white'}}
             >
               <MenuItem value="">Filter Issue</MenuItem>
-              <MenuItem value="cleanliness">Cleanliness</MenuItem>
-              <MenuItem value="electrical">Electrical</MenuItem>
-              <MenuItem value="plumbing">Plumbing</MenuItem>
-              <MenuItem value="other">Other</MenuItem>
+              {issues.map((issue) => (
+                <MenuItem key={issue.issue_category_code} value={issue.issue_category_name}>
+                  {issue.issue_category_name}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
 
@@ -238,9 +272,13 @@ function MUITicketSystem() {
               sx={{ borderRadius: '4px', bgcolor: 'white'}}
             >
               <MenuItem value="">Filter Department</MenuItem>
-              <MenuItem value="Maintenance">Maintenance</MenuItem>
-              <MenuItem value="Cleaning">Cleaning</MenuItem>
-              <MenuItem value="Security">Security</MenuItem>
+              {
+                departments.map((department) => (
+                  <MenuItem key={department.department_code} value={department.department_name}>
+                    {department.department_name}
+                  </MenuItem>
+                ))
+              }
             </Select>
           </FormControl>
 
@@ -265,31 +303,35 @@ function MUITicketSystem() {
       </Box>
 
       <Box component="section" sx={{ width: '98%', margin: 'auto', display: 'flex', flexDirection: 'column', borderRadius: '4px', bgcolor: 'white', flex: 1, minHeight: 0 }}>
-        <Box sx={{ height: 56, width: '100%', pl: 9, pr: 3.5, py: 4, display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end'}}>
-          <TextField
-            variant="standard"
-            size="small"    
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            sx={{
-              width: '20%',
-              '& .MuiInput-root': {
-                borderBottom: '1px solid #E5E7EB',
-                '&:before': { borderBottom: '1px solid #E5E7EB' },
-                '&:after': { borderBottom: '2px solid primary.main' },
-                '&:hover:not(.Mui-disabled):before': { borderBottom: '1px solid #E5E7EB' },
-              },
-            }}
-            InputLabelProps={{ shrink: true }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon sx={{ color: 'text.secondary' }} />
-                </InputAdornment>
-              ),
-            }}
-          />
-        </Box>
+        <Box sx={{ height: 56, width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 2, my: 1, pr: 3 }}>
+                    <TextField
+                        variant='standard'
+                        size='small'
+                        placeholder='Search'
+                        sx={{ 
+                            width: '20%',
+                            '& .MuiInput-root': {
+                                borderBottom: '1px solid rgba(0, 0, 0, 0.42)',
+                                '&:hover': {
+                                    borderBottom: '1px solid rgba(0, 0, 0, 0.87)',
+                                },
+                                '&.Mui-focused': {
+                                    borderBottom: '2px solid #1976d2',
+                                },
+                            },
+                            '& .MuiInput-root:before': { borderBottom: 'none' },
+                            '& .MuiInput-root:after': { borderBottom: 'none' },
+                            '& .MuiInput-root:hover:not(.Mui-disabled):before': { borderBottom: 'none' },
+                        }}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon sx={{ color: 'text.secondary' }} />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 , width: '100%' }}>
           <TableContainer component={Paper} sx={{ flex: 1, minHeight: 0, fontFamily: 'Inter, sans-serif', width: '100%' }}>
@@ -299,13 +341,13 @@ function MUITicketSystem() {
                   <TableCell sx={{ width: '3%', p: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
                     <Checkbox sx={{ color: 'primary.main', '&.Mui-checked': { color: 'primary.main' } }} />
                   </TableCell>
-                  <TableCell sx={{ width: '5%', p: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
+                  <TableCell sx={{ width: '4%', p: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
                     Ticket ID
                   </TableCell>
-                  <TableCell sx={{ width: '5%', p: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
+                  <TableCell sx={{ width: '4%', p: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
                     Room Details
                   </TableCell>
-                  <TableCell sx={{ width: '5%', p: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
+                  <TableCell sx={{ width: '5.5%', p: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
                     Submitted By
                   </TableCell>
                   <TableCell sx={{ width: '4%', p: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
@@ -349,7 +391,7 @@ function MUITicketSystem() {
                         {record.ticket_id}
                       </TableCell>
                       <TableCell sx={{ width: '5%', p: '0.5rem 0.75rem', fontSize: '0.875rem', color: '#616161' }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
                           <Typography variant="body2">{record.room_number}</Typography>
                           <Typography variant="caption" color="text.secondary">
                             {record.ward}
@@ -357,7 +399,12 @@ function MUITicketSystem() {
                         </Box>
                       </TableCell>
                       <TableCell sx={{ width: '5%', p: '0.5rem 0.75rem', fontSize: '0.875rem', color: '#616161' }}>
-                        {record.submitted_by}
+                        <Box sx={{ display: 'flex', flexDirection: 'column'}}>
+                          <Typography variant="body2">{record.submitted_by}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {new Date(record.submitted_at).toLocaleDateString()} | {new Date(record.submitted_at).toLocaleTimeString()}
+                          </Typography>
+                        </Box>
                       </TableCell>
                       <TableCell sx={{ width: '4%', p: '0.5rem 0.75rem', fontSize: '0.875rem', color: '#616161' }}>
                         {record.issue_type}
@@ -508,6 +555,7 @@ function MUITicketSystem() {
             setViewTicket={setViewTicket}
             fetchRows={fetchRows}
             pageNumber={pageNumber}
+            departments={departments}
           />
           <Box
             sx={{

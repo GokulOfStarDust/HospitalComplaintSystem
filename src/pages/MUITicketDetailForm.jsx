@@ -51,7 +51,7 @@ const updateFormHandler = async (data, ticket_id, fetchRows, pageNumber) => {
   console.log('Update Data:', data);
 };
 
-function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRows, pageNumber }) {
+function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRows, pageNumber, departments}) {
   console.log('Complaint Data:', complaintData);
   const [isEditable, setIsEditable] = useState(false);
   const [description, setDescription] = useState(complaintData.description || '');
@@ -63,15 +63,31 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
   );
   const [assignedDepartment, setAssignedDepartment] = useState(complaintData.assigned_department || '');
   const [assignedStaff, setAssignedStaff] = useState(complaintData.assigned_staff || '');
+  const statusStyles = {
+  open: {
+    color: 'primary.main',
+    borderColor: 'primary.light',
+  },
+  in_progress: {
+    color: 'info.main',
+    borderColor: 'info.light',
+  },
+  resolved: {
+    color: 'success.main',
+    borderColor: 'success.light',
+  },
+  closed: {
+    color: 'grey.700',
+    borderColor: 'grey.400',
+  },
+  on_hold: {
+    color: 'warning.main',
+    borderColor: 'warning.light',
+  }
+};
+
 
   // Sample department and staff data (replace with actual data from your API)
-  const departments = [
-    'Maintenance',
-    'Housekeeping',
-    'IT Support',
-    'Medical Equipment',
-    'Administration'
-  ];
   const staffMembers = {
     'Maintenance': ['John Smith', 'Alice Johnson', 'Bob Wilson'],
     'Housekeeping': ['Mary Brown', 'Sarah Davis', 'Tom Clark'],
@@ -114,21 +130,20 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
         sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', py: 2, px: 2.5 }}
         key="header-section"
       >
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4, width: '100%' }} key="ticket-info">
+        <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }} key="ticket-info">
           <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }} key="ticket-header">
-            <Typography variant="h5" sx={{ fontStyle: 'italic', color: 'text.primary' }} key="ticket-id">
+            <Typography variant="h6" sx={{ fontStyle: 'italic', color: 'text.primary' }} key="ticket-id">
               #{complaintData.ticket_id}
             </Typography>
             <Chip
-              label="Open"
+              label={complaintData.status}
               sx={{
                 ml: 2,
                 height: 20,
                 fontSize: '0.75rem',
                 fontWeight: '600',
-                color: 'success.main',
                 border: '1px solid',
-                borderColor: 'success.light',
+                ...statusStyles[complaintData.status],
                 bgcolor: 'transparent',
                 borderRadius: '16px',
               }}
@@ -295,8 +310,8 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
                 >
                   <MenuItem value="">None</MenuItem>
                   {departments.map((dept) => (
-                    <MenuItem key={dept} value={dept}>
-                      {dept}
+                    <MenuItem key={dept.department_code} value={dept.department_name}>
+                      {dept.department_name}
                     </MenuItem>
                   ))}
                 </Select>

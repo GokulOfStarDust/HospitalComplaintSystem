@@ -20,7 +20,10 @@ import {
   TableRow,
   Paper,
   IconButton,
+  InputAdornment
 } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+
 
 function MUIIssueCategory() {
   const [isEditMode, setIsEditMode] = useState(false);
@@ -279,16 +282,35 @@ function MUIIssueCategory() {
         </form>
       </Box>
       <Box component="section" className="w-[98%] ml-4 flex flex-col rounded-md bg-white flex-1 min-h-0">
-        <Box className="h-14 w-full self-end my-2 pr-9 flex flex-row items-center justify-end gap-x-4">
-          <TextField
-            variant="outlined"
-            size="small"
-            label="Search"
-            InputLabelProps={{ shrink: true }}
-            className="h-10 w-[20%]"
-            sx={{ '& .MuiOutlinedInput-root': { borderBottom: '1px solid #E5E7EB' } }}
-          />
-        </Box>
+        <Box sx={{ height: 56, width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 2, my: 1, pr: 3 }}>
+                    <TextField
+                        variant='standard'
+                        size='small'
+                        placeholder='Search'
+                        sx={{ 
+                            width: '20%',
+                            '& .MuiInput-root': {
+                                borderBottom: '1px solid rgba(0, 0, 0, 0.42)',
+                                '&:hover': {
+                                    borderBottom: '1px solid rgba(0, 0, 0, 0.87)',
+                                },
+                                '&.Mui-focused': {
+                                    borderBottom: '2px solid #1976d2',
+                                },
+                            },
+                            '& .MuiInput-root:before': { borderBottom: 'none' },
+                            '& .MuiInput-root:after': { borderBottom: 'none' },
+                            '& .MuiInput-root:hover:not(.Mui-disabled):before': { borderBottom: 'none' },
+                        }}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon sx={{ color: 'text.secondary' }} />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                </Box>
         <Box className="flex flex-col flex-1 min-h top-10">
           <TableContainer component={Paper} className="flex flex-col flex-1 min-h-0 font-sans">
             <Table className="table-fixed w-full">
