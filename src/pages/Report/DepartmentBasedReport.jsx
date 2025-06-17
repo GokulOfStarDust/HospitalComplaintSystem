@@ -1,207 +1,370 @@
-import React, { useState, useEffect, use } from 'react';
-import axios from 'axios';
-import { BASE_URL, COMPLAINT_URL } from '../Url';
-import { TextField, Button, Checkbox, FormControlLabel, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Box, Typography, InputAdornment, TablePagination } from '@mui/material';
-import { table } from '@uiw/react-md-editor';
-import Drawer from '@mui/material/Drawer';
-import { DataGrid } from '@mui/x-data-grid';
+  import React, { useState, useEffect, use } from 'react';
+  import axios from 'axios';
+  import { BASE_URL, COMPLAINT_URL } from '../Url';
+  import { TextField, Button , IconButton, Box, Typography, InputAdornment, Divider, MenuItem } from '@mui/material';
+  import Drawer from '@mui/material/Drawer';
+  import PrintIcon from '@mui/icons-material/Print';
+  import FilterListIcon from '@mui/icons-material/FilterList';
+  import { useSearchParams } from 'react-router-dom';
+  import { DataGrid } from '@mui/x-data-grid';
+  import { REPORT_URL } from '../Url';
+  import CloseIcon from '@mui/icons-material/Close';
+  import CustomOverlay from './CustomOverlay';
 
-function DepartmentBasedReport() {
+  function DepartmentBasedReport() {
 
-  const [tableContent, setTableContent] = useState([]);
-  const [page, setPage] = useState(0); // DataGrid uses 0-based page index
-  const [pageSize, setPageSize] = useState(10);
-  const [rows, setRows] = useState([]);
-  const [rowCount, setRowCount] = useState(0); // Total rows for pagination
-  const [isLoading, setIsLoading] = useState(false);
-  const [filterModel, setFilterModel] = useState({ items: [] });
+    const [page, setPage] = useState(0); // DataGrid uses 0-based page index
+    const [pageSize, setPageSize] = useState(10);
+    const [rows, setRows] = useState([]);
+    const [rowCount, setRowCount] = useState(0); // Total rows for pagination
+    const [isLoading, setIsLoading] = useState(false);
+    const [filterModel, setFilterModel] = useState({ items: [] });
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [filters, setFilters] = useState({
+      submitted_at: new Date(Date.now()).toISOString().split('T')[0] || '', // Default to today's date
+      priority: '',
+      department: '',
+    });
+    const [totals, setTotals] = useState({
+      totalTickets: 0,
+      resolvedTickets: 0,
+      priorityHigh: 0,
+    });
+
+  const columns = [
+    { field: 'assigned_department', headerName: 'Department', flex: 1.5, minWidth: 150 , cellClassName: 'department-column', headerClassName: 'department-header'},
+    { field: 'priority', headerName: 'Priority', flex: 1, minWidth: 200 },
+    { field: 'total_tickets', headerName: 'Total Tickets', flex: 1, minWidth: 200,  },
+    { field: 'resolved', headerName: 'Resolved', flex: 1, minWidth: 200},
+    { field: 'pending', headerName: 'Pending', flex: 1, minWidth: 200 },
+  ];
 
 
-const columns = [    { field: 'assigned_department', headerName: 'Department', width: 200 },    { field: 'priority', headerName: 'Priority', width: 150 },    { field: 'total_tickets', headerName: 'Total Tickets', width: 150 },    { field: 'resolved', headerName: 'Resolved', width: 150 },    { field: 'pending', headerName: 'Pending', width: 150 },  ];
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Fetch data from API
-  const fetchRows = async () => {
-    setIsLoading(true);
-    try {
-      // Construct query parameters
-      const params = {
-        limit: pageSize,
-        offset: page * pageSize,
-      };
+  useEffect(() => {
+    setSearchParams({
+      priority: filters.priority,
+      department: filters.department,
+      submitted_at: filters.submitted_at,
+    });
+  }, [filters]);
+    // Fetch data from API
+    const fetchRows = async () => {
+      setIsLoading(true);
+      try {
+        // Construct query parameters
+        const params = {
+          limit: pageSize,
+          offset: page * pageSize,
+        };
 
-      // Add filters if present
-      filterModel.items.forEach((filter) => {
-        if (filter.value) {
-          params[filter.field] = filter.value;
-        }
+        // Add filters if present
+        // filterModel.items.forEach((filter) => {
+        //   if (filter.value) {
+        //     params[filter.field] = filter.value;
+        //   }
+        // });
+
+        params.submitted_at = filters.submitted_at || '';
+        params.priority = filters.priority || '';
+        params.department = filters.department || '';
+        console.log("API Request Parameters:", params);
+
+        const response = await axios.get(`${BASE_URL}${REPORT_URL}`, { params });
+        const data = response.data;
+        console.log("API Response Data:", data);
+
+
+        // if (data.message) {
+        //   console.error('Custom messaeg:', data.message);
+        //   return;
+        // }
+
+        const formattedRows = Array.isArray(data.results) ? data.results.map((item, index) => ({
+          id: item.department_code || `${item.assigned_department}-${index}`, // DataGrid requires unique 'id'
+          assigned_department: item.assigned_department,
+          priority: item.priority,
+          total_tickets: item.total_tickets || 0,
+          resolved: item.resolved || 0,
+          pending: item.open_tickets || 0,
+        })) : [];
+
+
+      
+
+        setRows(formattedRows);
+        
+        setRowCount(data.count || 0);
+      } catch (error) {
+        console.error('Error fetching data:', error.response?.statusText || error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+
+
+    useEffect(() => {
+
+      const totalTickets =  rows.reduce((sum, row) => sum + (row.total_tickets || 0), 0);
+      const resolvedTickets = rows.reduce((sum, row) => sum + (row.resolved || 0), 0);
+      const priorityHigh = rows.reduce((sum, row) => sum + (row.priority === 'high' ? (row.total_tickets || 0) : 0), 0);
+      setTotals({
+        totalTickets,
+        resolvedTickets,
+        priorityHigh,
       });
 
-      const response = await axios.get(`${BASE_URL}${COMPLAINT_URL}`, { params });
-      const data = response.data;
-
-      // Transform data to match DataGrid row structure
-      const formattedRows = data.results.map((item, index) => ({
-        id: item.department_code || `${item.assigned_department}-${index}`, // DataGrid requires unique 'id'
-        assigned_department: item.assigned_department,
-        priority: item.priority,
-        total_tickets: item.total_tickets || 0,
-        resolved: item.resolved || 0,
-        pending: item.pending || 0,
-      }));
-
-      setRows(formattedRows);
-      setRowCount(data.count || 0);
-    } catch (error) {
-      console.error('Error fetching data:', error.response?.statusText || error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Fetch data when page, pageSize, or filterModel changes
-  useEffect(() => {
-    fetchRows();
-  }, [page, pageSize, filterModel]);
-
-  // Handle filter changes
-  const handleFilterModelChange = (newFilterModel) => {
-    setFilterModel(newFilterModel);
-    setPage(0); // Reset to first page on filter change
-  };
-
-// useEffect(() => {
-//   console.log("Table Rows:", tableRows);
-// }, [tableRows]);
+    }, [rows]);
 
 
-    return (
-        <main className='w-screen h-screen flex flex-col gap-y-4 p-4 font-sans'>
-              <Box component="section" sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 2, rowGap: 5 , columnGap: 1}}>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      bgcolor: 'white',
-                      py: 2,
-                      px: 4,
-                      borderRadius: '4px',
-                      border: '1px solid',
-                      borderColor: 'grey.300',
+    // Fetch data when page, pageSize, or filterModel changes
+    useEffect(() => {
+      fetchRows();
+    }, [page, pageSize, filterModel]);
+
+    // Handle filter changes
+    const handleFilterModelChange = (newFilterModel) => {
+      setFilterModel(newFilterModel);
+      setPage(0); // Reset to first page on filter change
+    };
+
+  // useEffect(() => {
+  //   console.log("Table Rows:", tableRows);
+  // }, [tableRows]);
+
+
+      return (
+          <main className='w-screen h-screen flex flex-col gap-y-0 p-4 font-sans'>
+                <Box component="section" sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 2, rowGap: 5 , columnGap: 1}}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'white',
+                        py: 2.3,
+                        px: 4,
+                        borderRadius: '5px',
+                        border: '1px solid',
+                        borderColor: 'grey.300',
+                      }}
+                    >
+                      <Typography variant="h6" fontWeight="600">
+                        {totals.totalTickets}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Total Tickets
+                      </Typography>
+                    </Box>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'white',
+                        py: 2.3,
+                        px: 3,
+                        borderRadius: '5px',
+                        border: '1px solid',
+                        borderColor: 'grey.300',
+                      }}
+                    >
+                      <Typography variant="h6" fontWeight="600">
+                        {totals.resolvedTickets}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Resolved Tickets
+                      </Typography>
+                    </Box>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'white',
+                        py: 2.3,
+                        px: 4,
+                        borderRadius: '5px',
+                        border: '1px solid',
+                        borderColor: 'grey.300',
+                      }}
+                    >
+                      <Typography variant="h6" fontWeight="600">
+                        {totals.priorityHigh}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Priority High
+                      </Typography>
+                    </Box>
+                </Box>
+
+
+
+
+              <section className='w-[98%] ml-4 flex flex-col rounded-md bg-white flex-1 min-h-0 shadow-xl'>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', p: 2 , position: 'absolute', right: 25, top: 80, zIndex: 1, columnGap: 0.8 }}>
+                  <IconButton 
+                  onClick={() => setDrawerOpen(true)}
+                  sx={{border: '1px solid #616161', borderRadius: '4px', marginRight: '8px', padding: 0.6}}>
+                    <FilterListIcon sx={{color: '#616161'}} />
+                  </IconButton>
+                  
+                  <IconButton sx={{border: '1px solid #616161', borderRadius: '4px', marginRight: '8px', padding: 0.6}}>
+                    <PrintIcon sx={{color: '#616161'}}/>
+                  </IconButton>
+                </Box>
+                <div style={{ height: '100%', width: '100%' }}>
+                  <DataGrid
+                    rows={rows}
+                    columns={columns}
+                    rowCount={rowCount}
+                    paginationMode="server"
+                    // filterMode="server"
+                    // onFilterModelChange={handleFilterModelChange}
+                    paginationModel={{ page, pageSize }}
+                    onPaginationModelChange={({ page: newPage, pageSize: newPageSize }) => {
+                      setPage(newPage);
+                      setPageSize(newPageSize);
                     }}
-                  >
-                    <Typography variant="h6" fontWeight="600">
-                      Wait
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Total Tickets
-                    </Typography>
-                  </Box>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      bgcolor: 'white',
-                      py: 2,
-                      px: 3,
-                      borderRadius: '4px',
-                      border: '1px solid',
-                      borderColor: 'grey.300',
+                
+                    slots={{
+                      noRowsOverlay: CustomOverlay, // Custom overlay when no rows are available
                     }}
-                  >
-                    <Typography variant="h6" fontWeight="600">
-                      Wait
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Resolved Tickets
-                    </Typography>
-                  </Box>
-                  <Box
+                    loading={isLoading}
+                    pageSizeOptions={[10, 25, 50, 100]}
                     sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      bgcolor: 'white',
-                      py: 2,
-                      px: 4,
-                      borderRadius: '4px',
-                      border: '1px solid',
-                      borderColor: 'grey.300',
+                      color: '#616161',
+                      '--DataGrid-rowHeight': '20px',
+                      border: 0,
+                      '& .MuiDataGrid-columnHeaders': {
+                        backgroundColor: '#FAF9F9',
+                        borderBottom: '0px',
+                      },
+                      '& .MuiDataGrid-columnHeader': {
+                        backgroundColor: '#FAF9F9',
+                      },
+                      '& .MuiDataGrid-columnSeparator': {
+                        display: 'none', // Remove vertical dividers between headers
+                      },
+                      '& .department-column': {
+                        paddingLeft: '20px',
+                      },
+                      '& .department-header .MuiDataGrid-columnHeaderTitle': {
+                        paddingLeft: '20px', // Correct padding for Department header title
+                      },
+                      '& .resolved .MuiDataGrid-cell': {
+                        paddingLeft: '10px',
+                      },
                     }}
-                  >
-                    <Typography variant="h6" fontWeight="600">
-                      Wait
+                  />
+                </div>
+              </section>
+              <Drawer
+                anchor="right"
+                open={drawerOpen}
+                onClose={() => setDrawerOpen(false)}
+              >
+                <Box sx={{ width: 400, p: 3 }} role="presentation">
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="h7" gutterBottom sx={{color: "#183433"}}>
+                      Filter
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Priority High
-                    </Typography>
+                    <IconButton
+                      sx={{paddingBottom: 1.5, color: '#616161'}}
+                      onClick={() => setDrawerOpen(false)}
+                    >
+                      <CloseIcon />
+                    </IconButton>
                   </Box>
-              </Box>
+                  
+                  <Divider/>
+                  
+                  {/* Date Picker */}
+                  <TextField
+                    label="Select Date"
+                    type="date"
+                    fullWidth
+                    InputLabelProps={{ shrink: true }}
+                    sx={{ mb: 2, mt:4 }}
+                    value={filters.submitted_at}
+                    onChange={(e) => setFilters({...filters, submitted_at : e.target.value})}
+                  />
+              
+                  {/* Priority Dropdown */}
+                  <TextField
+                    select
+                    label="Priority"
+                    fullWidth
+                    sx={{ mb: 2 }}
+                    value={filters.priority}
+                    onChange={(e) => setFilters({...filters, priority: e.target.value})}
+                  >
+                    <MenuItem value="">All</MenuItem>
+                    <MenuItem value="low">Low</MenuItem>
+                    <MenuItem value="medium">Medium</MenuItem>
+                    <MenuItem value="high">High</MenuItem>
+                  </TextField>
+                              
+                  {/* Department Dropdown */}
+                  <TextField
+                    select
+                    label="Department"
+                    fullWidth
+                    value={filters.department}
+                    onChange={(e) => setFilters({...filters, department: e.target.value})}
+                  >
+                    <MenuItem value="">All</MenuItem>
+                    <MenuItem value="IT Admin">IT Admin</MenuItem>
+                    <MenuItem value="Maintenance">Maintenance</MenuItem>
+                    <MenuItem value="Medical">Medical</MenuItem>
+                    {/* Add more departments as needed */}
+                  </TextField>
+                              
+                  {/* Apply Filters Button */}
+                  <Box sx={{display: 'flex', flexDirection: 'row' , gap: 2, mt: 3}}>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      sx={{ mt: 3, color: '#04B7B1', bgcolor: 'White', outline: '1px solid #04B7B1' }}
+                      onClick={() => {
+                        setFilters({
+                          submitted_at: '',
+                          priority: '',
+                          assigned_department: '',
+                        });
+                        fetchRows();
+                        setPage(0); // Reset to first page on filter application
+                        console.log("Filters cleared:", filters);
+                      }}
+                    >
+                      Clear
+                    </Button>
+                    <Button
+                      variant="contained"
+                      fullWidth
+                      sx={{ mt: 3, color: 'white' }}
+                      onClick={() => {
+                          console.log(filters);
+                          fetchRows();
+                          setPage(0); // Reset to first page on filter application
+                        setDrawerOpen(false);
+                      }}
+                    >
+                      Search
+                    </Button>
+                  </Box>
+                  
+                </Box>
+              </Drawer>
+                  
+          </main>
+      );
+  }
 
-            <section className='w-[98%] ml-4 flex flex-col rounded-md bg-white flex-1 min-h-0'>
-                {/* <TableContainer component={Paper} className='flex flex-col flex-1 min-h-0'>
-                    <Table sx={{  width: '100%' }} className='font-sans table-fixed border-collapse w-full'>
-                        <TableHead sx={{ position: 'sticky', top: 0, zIndex: 1 }}>
-                            <TableRow sx={{ backgroundColor: '#FAF9F9', height: '50px', width: '100%' }}>
-
-                                <TableCell style={{ width: '20%' }} sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>Department</TableCell>
-                                <TableCell style={{ width: '20%' }} sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>Priority</TableCell>
-                                <TableCell style={{ width: '20%' }} sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>Total Tickets</TableCell>
-                                <TableCell style={{ width: '20%' }} sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>Resolved</TableCell>
-                                <TableCell style={{ width: '20%' }} sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>Pending</TableCell>
-
-                            </TableRow>
-                        </TableHead>
-                        <TableBody sx={{width:'100%', flexShrink: '' }} >
-                            {Array.isArray(tableContent.results) &&
-                                tableRows.map((record, index) => (
-                                    <TableRow key={record.department_code + index} hover sx={{width: '100%'}}>
-                                  
-                                        <TableCell sx={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', color: '#616161' }}>{record.assigned_department}</TableCell>
-                                        <TableCell sx={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', color: '#616161'}}>{record.priority}</TableCell>
-                                        <TableCell sx={{ paddingX: '0.5rem', paddingRight :'0.85rem', fontSize: '0.875rem', color: '#616161' }}> </TableCell>
-                                        <TableCell sx={{ paddingX: '0.5rem', paddingRight :'0.85rem', fontSize: '0.875rem', color: '#616161' }}> </TableCell>
-                                        <TableCell sx={{ paddingX: '0.5rem', paddingRight :'0.85rem', fontSize: '0.875rem', color: '#616161' }}> </TableCell>
-
-                                    </TableRow>
-                                ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-                <TablePagination
-                  component="div"
-                  count={tableContent.count || 0}
-                  page={pageNumber}
-                  onPageChange={handleChangePage}
-                  rowsPerPage={rowsPerPage}
-                  onRowsPerPageChange={handleChangeRowsPerPage}
-                  rowsPerPageOptions={[10, 25, 50, { label: 'All', value: Math.min(tableContent.count || 100, 100) }]} // Respect max_limit
-                /> */}
-              <div style={{ height: '100%', width: '100%' }}>
-                <DataGrid
-                  rows={rows}
-                  columns={columns}
-                  rowCount={rowCount}
-                  paginationMode="server"
-                  filterMode="server"
-                  onFilterModelChange={handleFilterModelChange}
-                  paginationModel={{ page, pageSize }}
-                  onPaginationModelChange={({ page: newPage, pageSize: newPageSize }) => {
-                    setPage(newPage);
-                    setPageSize(newPageSize);
-                  }}
-                  loading={isLoading}
-                  pageSizeOptions={[10, 25, 50, 100]}
-                  sx={{ border: 0 }}
-                />
-              </div>
-            </section>
-        </main>
-    );
-}
-
-export default DepartmentBasedReport;
+  export default DepartmentBasedReport;

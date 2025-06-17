@@ -24,10 +24,12 @@ import {
   InputAdornment
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import { set } from 'react-hook-form';
 
 function MUITicketSystem() {
   const [tableContent, setTableContent] = useState({ results: [] });
   const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [searchParams, setSearchParams] = useSearchParams();
   const [viewTicket, setViewTicket] = useState(false);
   const [complaintData, setComplaintData] = useState(null);
@@ -43,43 +45,64 @@ function MUITicketSystem() {
       searchParams.delete(name);
     }
     setSearchParams(searchParams);
+    setPageNumber(1); // Reset to first page on filter change
   };
 
   useEffect(() => {
-    const params = Object.fromEntries(searchParams.entries());
-    console.log('Search Params:', params);
-    const queryString = new URLSearchParams(params).toString();
-    fetchFilteredRows(queryString);
-  }, [searchParams]);
+    const filterParams = Object.fromEntries(searchParams.entries());
+    // if(Object.keys(filterParams).length === 0) {
+    //   fetchRows();
+    //   return;
+    // }
+    fetchFilteredRows(filterParams);
+  }, [searchParams, pageNumber]);
 
-  const fetchFilteredRows = async (queryString) => {
+
+  const fetchFilteredRows = async (filterParams) => {
     try {
+
+      const params = {
+        limit: pageSize,
+        offset: (pageNumber - 1) * pageSize,  
+        ...filterParams,
+      }
+
       const response = await axios.get(
-        `${BASE_URL}${COMPLAINT_URL}?page=${pageNumber}${queryString ? `&${queryString}` : ''}`,
+        `${BASE_URL}${COMPLAINT_URL}`,
         {
+          params,
           headers: {
             'Content-Type': 'application/json',
           },
-        }
+        },
+      
       );
       setTableContent(response.data);
+      fetchIssues();
+      fetchDepartments();
       console.log('Filtered Table Content:', response.data);
     } catch (error) {
       console.error('Error fetching filtered data:', error.response?.statusText || error.message);
     }
   };
 
-  const fetchRows = async () => {
-    try {
-      const response = await axios.get(`${BASE_URL}${COMPLAINT_URL}?page=${pageNumber}`);
-      setTableContent(response.data);
-      fetchIssues();
-      fetchDepartments();
-      console.log('Table Content:', response.data);
-    } catch (error) {
-      console.error('Error fetching data:', error.response?.statusText || error.message);
-    }
-  };
+  // const fetchRows = async () => {
+  //   try {
+
+  //     const params = {
+  //       limit: pageSize,
+  //       offset: (pageNumber - 1) * pageSize,  
+  //       queryString: searchParams || '',
+  //     }
+  //     const response = await axios.get(`${BASE_URL}${COMPLAINT_URL}`, {params});
+  //     setTableContent(response.data);
+  //     fetchIssues();
+  //     fetchDepartments();
+  //     console.log('Table Content:', response.data);
+  //   } catch (error) {
+  //     console.error('Error fetching data:', error.response?.statusText || error.message);
+  //   }
+  // };
 
   const fetchIssues = async () => {
     try {
@@ -110,9 +133,6 @@ function MUITicketSystem() {
   };
 
 
-  useEffect(() => {
-    fetchRows();
-  }, [pageNumber]);
 
   const deleteRows = async (ticket_id) => {
     try {
@@ -213,7 +233,7 @@ function MUITicketSystem() {
               label="Select Ward"
               sx={{ borderRadius: '4px', bgcolor: 'white'}}
             >
-              <MenuItem value="">Filter Ward</MenuItem>
+              <MenuItem value="">All Ward</MenuItem>
               <MenuItem value="General">General</MenuItem>
               <MenuItem value="Operation">Operation</MenuItem>
               <MenuItem value="ICU">ICU</MenuItem>
@@ -231,7 +251,7 @@ function MUITicketSystem() {
               label="Select Status"
               sx={{ borderRadius: '4px', bgcolor: 'white'}}
             >
-              <MenuItem value="">Filter Status</MenuItem>
+              <MenuItem value="">All Status</MenuItem>
               <MenuItem value="open">Open</MenuItem>
               <MenuItem value="on_hold">On Hold</MenuItem>
               <MenuItem value="in_progress">In Progress</MenuItem>
@@ -251,7 +271,7 @@ function MUITicketSystem() {
               label="Select Issue"
               sx={{ borderRadius: '4px', bgcolor: 'white'}}
             >
-              <MenuItem value="">Filter Issue</MenuItem>
+              <MenuItem value="">All Issue</MenuItem>
               {issues.map((issue) => (
                 <MenuItem key={issue.issue_category_code} value={issue.issue_category_name}>
                   {issue.issue_category_name}
@@ -271,7 +291,7 @@ function MUITicketSystem() {
               label="Select Department"
               sx={{ borderRadius: '4px', bgcolor: 'white'}}
             >
-              <MenuItem value="">Filter Department</MenuItem>
+              <MenuItem value="">All Departments</MenuItem>
               {
                 departments.map((department) => (
                   <MenuItem key={department.department_code} value={department.department_name}>
@@ -283,7 +303,7 @@ function MUITicketSystem() {
           </FormControl>
 
           <FormControl sx={{ width: '11.5%'}} size="small">
-            <InputLabel id="priority-label">Select Priority</InputLabel>
+            <InputLabel id="priority-label">All Priority</InputLabel>
             <Select
               labelId="priority-label"
               id="priority"
@@ -293,7 +313,7 @@ function MUITicketSystem() {
               label="Select Priority"
               sx={{ borderRadius: '4px', bgcolor: 'white'}}
             >
-              <MenuItem value="">Filter Priority</MenuItem>
+              <MenuItem value="">All Priority</MenuItem>
               <MenuItem value="low">Low</MenuItem>
               <MenuItem value="medium">Medium</MenuItem>
               <MenuItem value="high">High</MenuItem>

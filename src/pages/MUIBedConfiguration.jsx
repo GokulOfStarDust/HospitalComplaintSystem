@@ -27,8 +27,9 @@ import { BASE_URL, ROOMS_URL } from './Url';
 
 function MUIBedConfiguration() {
   const [roomQR, setRoomQRCode] = useState([]);
-  const [tableContent, setTableContent] = useState([]);
+  const [tableContent, setTableContent] = useState({ results: [], count: 0 });
   const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [isEditable, setIsEditable] = useState(false);
   const [idToEdit, setIdToEdit] = useState(null);
   const [masterChecked, setMasterChecked] = useState(false);
@@ -54,6 +55,10 @@ function MUIBedConfiguration() {
   } = useForm({
     defaultValues,
   });
+
+  useEffect(() => {
+    console.log('Table content updated:', tableContent);
+  }, [tableContent]);
 
   const formDataHandler = async (data) => {
     const METHOD = isEditable ? 'put' : 'post';
@@ -82,7 +87,7 @@ function MUIBedConfiguration() {
       fetchRows();
       setIdToEdit(null);
       setIsEditable(false);
-      reset(defaultValues); // Explicitly reset form to default values
+      reset(defaultValues);
     } catch (error) {
       console.error('Error:', error.response?.statusText || error.message);
     }
@@ -90,24 +95,38 @@ function MUIBedConfiguration() {
 
   useEffect(() => {
     fetchRows();
-  }, [pageNumber]);
+  }, [pageNumber, pageSize]);
 
   const fetchRows = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}${ROOMS_URL}?page=${pageNumber}`);
-      setTableContent(response.data);
-      const dataForQr = response.data.results.map((prop) => ({
+      const params = {
+        limit: pageSize,
+        offset: (pageNumber - 1) * pageSize,
+      };
+
+      const response = await axios.get(`${BASE_URL}${ROOMS_URL}`, { params });
+      const data = response.data || { results: [], count: 0 };
+      setTableContent({
+        results: data.results || [],
+        count: data.count || 0,
+      });
+
+      const dataForQr = (data.results || []).map((prop) => ({
         id: prop.id,
         qrCodeUrl: prop.qr_code,
         toPrint: false,
         status: prop.status,
       }));
+
       setRoomQRCode((prev) => {
-        const filteredData = dataForQr.filter((item, index) => item.id !== prev[index]?.id);
-        return [...prev, ...filteredData];
+        // Remove duplicates by ID
+        const existingIds = new Set(prev.map((item) => item.id));
+        const newData = dataForQr.filter((item) => !existingIds.has(item.id));
+        return [...prev, ...newData];
       });
     } catch (error) {
       console.error('Error fetching rows:', error.response?.statusText || error.message);
+      setTableContent({ results: [], count: 0 });
     }
   };
 
@@ -118,6 +137,7 @@ function MUIBedConfiguration() {
       setTableContent((prev) => ({
         ...prev,
         results: prev.results.filter((item) => item.id !== id),
+        count: prev.count - 1,
       }));
     } catch (error) {
       console.error('Error deleting row:', error.response?.statusText || error.message);
@@ -133,6 +153,9 @@ function MUIBedConfiguration() {
     setAnchorEl(null);
     setSelectedRowId(null);
   };
+
+  // Calculate total pages
+  const totalPages = Math.max(1, Math.ceil(tableContent.count / pageSize));
 
   return (
     <main className="h-svh flex flex-row gap-x-4 justify-between items-center">
@@ -316,7 +339,7 @@ function MUIBedConfiguration() {
                     </TableCell>
                   </TableRow>
                 ))}
-              {Array(10 - (tableContent.results?.length || 0)).fill(null).map((_, i) => (
+              {Array(pageSize - (tableContent.results?.length || 0)).fill(null).map((_, i) => (
                 <TableRow key={`empty-${i}`} sx={{ height: '6.7vh' }}>
                   <TableCell sx={{ padding: '0 0.75rem', borderRight: 'none' }}> </TableCell>
                   {Array(8).fill(null).map((_, idx) => (
@@ -330,20 +353,21 @@ function MUIBedConfiguration() {
         </TableContainer>
         <div className="flex flex-row justify-end items-center px-4 py-2 bg-[#FAF9F9]">
           <div className="mx-4 text-sm text-secondary">
-            Page {pageNumber} of {Math.max(1, Math.ceil(tableContent.count / 10))}
+            Page {pageNumber} of {totalPages}
           </div>
-          <Button onClick={() => setPageNumber((prev) => (prev > 1 ? prev - 1 : prev))} disabled={pageNumber === 1}>
+          <Button onClick={() => setPageNumber((prev) => Math.max(1, prev - 1))} disabled={pageNumber === 1}>
             <img src="prevIcon.svg" alt="Previous" />
           </Button>
           <Button
-            onClick={() => setPageNumber((prev) => (prev < Math.ceil(tableContent.count / 10) ? prev + 1 : prev))}
-            disabled={pageNumber === Math.ceil(tableContent.count / 10) || tableContent.count === 0}
+            onClick={() => setPageNumber((prev) => Math.min(totalPages, prev + 1))}
+            disabled={pageNumber === totalPages || tableContent.count === 0}
           >
             <img src="nextIcon.svg" alt="Next" />
           </Button>
         </div>
       </section>
 
+      {/* Form section remains unchanged */}
       <section className="flex flex-col justify-between w-[30%] h-[95vh] bg-white rounded-xl">
         <div className="flex flex-col bg-[#FAF9F9] py-3 px-4 rounded-t-xl">
           <p className="font-sans text-secondary">Bed Configuration</p>
