@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import axios from 'axios';
-import { BASE_URL, DEPARTMENT_URL, ISSUE_CATEGORY_URL } from './Url';
+import { BASE_URL, DEPARTMENT_URL, ISSUE_CATEGORY_URL } from '../Url';
 
 function IssueCategory() {
   const [isEditMode, setIsEditMode] = useState(false);

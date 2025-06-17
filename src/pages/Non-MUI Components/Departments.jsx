@@ -1,7 +1,7 @@
 import React,{useState, useEffect} from 'react'
 import { set, useForm } from 'react-hook-form'
 import axios from 'axios'
-import { BASE_URL, DEPARTMENT_URL } from './Url'
+import { BASE_URL, DEPARTMENT_URL } from '../Url'
 
 function Departments() {
 const [isEditMode, setIsEditMode] = useState(false);

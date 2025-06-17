@@ -1,7 +1,7 @@
 import React,{useEffect, useState} from 'react'
 import { Controller, useForm } from 'react-hook-form';
 import axios from 'axios';
-import handleQRCodePrint, {QRCodePrinter} from './PrintQRCode';
+import handleQRCodePrint, {QRCodePrinter} from '../PrintQRCode';
 import {
   TextField,
   Select,
@@ -24,7 +24,7 @@ import {
 } from "@mui/material"
 import { Edit, Delete, MoreVert } from "@mui/icons-material"
 
-import { BASE_URL, ROOMS_URL } from './Url';
+import { BASE_URL, ROOMS_URL } from '../Url';
 
 function BedConfiguration() {
 

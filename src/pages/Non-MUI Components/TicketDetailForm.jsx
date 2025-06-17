@@ -3,7 +3,7 @@
     import '@uiw/react-md-editor/markdown-editor.css';
     import '@uiw/react-markdown-preview/markdown.css';
     import axios from 'axios';
-    import { BASE_URL, COMPLAINT_URL } from './Url';
+    import { BASE_URL, COMPLAINT_URL } from '../Url';
 
     const updateFormHandler = async (data, ticket_id, fetchRows, pageNumber) => {
         

@@ -2,7 +2,7 @@ import React, { useState, useEffect} from 'react'
 import { useSearchParams } from 'react-router';
 import TicketDetailForm from './TicketDetailForm';
 import axios from 'axios';
-import { BASE_URL, COMPLAINT_URL } from './Url';
+import { BASE_URL, COMPLAINT_URL } from '../Url';
 
 function TicketSystem() {
 
