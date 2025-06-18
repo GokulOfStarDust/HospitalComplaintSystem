@@ -86,23 +86,23 @@ function MUITicketSystem() {
     }
   };
 
-  // const fetchRows = async () => {
-  //   try {
+  const fetchRows = async () => {
+    try {
 
-  //     const params = {
-  //       limit: pageSize,
-  //       offset: (pageNumber - 1) * pageSize,  
-  //       queryString: searchParams || '',
-  //     }
-  //     const response = await axios.get(`${BASE_URL}${COMPLAINT_URL}`, {params});
-  //     setTableContent(response.data);
-  //     fetchIssues();
-  //     fetchDepartments();
-  //     console.log('Table Content:', response.data);
-  //   } catch (error) {
-  //     console.error('Error fetching data:', error.response?.statusText || error.message);
-  //   }
-  // };
+      const params = {
+        limit: pageSize,
+        offset: (pageNumber - 1) * pageSize,  
+        queryString: searchParams || '',
+      }
+      const response = await axios.get(`${BASE_URL}${COMPLAINT_URL}`, {params});
+      setTableContent(response.data);
+      fetchIssues();
+      fetchDepartments();
+      console.log('Table Content:', response.data);
+    } catch (error) {
+      console.error('Error fetching data:', error.response?.statusText || error.message);
+    }
+  };
 
   const fetchIssues = async () => {
     try {

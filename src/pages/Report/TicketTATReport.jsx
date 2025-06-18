@@ -20,7 +20,7 @@
     const [filterModel, setFilterModel] = useState({ items: [] });
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [filters, setFilters] = useState({
-      submitted_at: new Date(Date.now()).toISOString().split('T')[0],
+      date: '', // new Date(Date.now()).toISOString().split('T')[0]
       priority: '',
       start_time: '',
       end_time: '',
@@ -45,7 +45,7 @@
   useEffect(() => {
     setSearchParams({
       priority: filters.priority,
-      submitted_at: filters.submitted_at,
+      date: filters.date,
       end_time: filters.end_time,
       start_time: filters.start_time,
     });
@@ -67,7 +67,7 @@
         //   }
         // });
 
-        params.submitted_at = filters.submitted_at || '';
+        params.date = filters.date || '';
         params.priority = filters.priority || '';
         params.start_time = filters.start_time || '';
         params.end_time = filters.end_time || '';
@@ -321,7 +321,7 @@
                       sx={{ mt: 3, color: '#04B7B1', bgcolor: 'White', outline: '1px solid #04B7B1' }}
                       onClick={() => {
                         setFilters({
-                          submitted_at: '',
+                          date: '',
                           priority: '',
                           end_time: '',
                           start_time: '',

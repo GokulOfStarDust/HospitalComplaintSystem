@@ -110,7 +110,7 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'flex-start',
-        width: '60vw',
+        width: '60vw', 
         minHeight: '91vh',
         maxHeight: '91vh',
         overflowY: 'auto',
