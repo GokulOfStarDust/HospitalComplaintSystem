@@ -4,6 +4,8 @@ import MUITicketDetailForm from './MUITicketDetailForm';
 import axios from 'axios';
 import { BASE_URL, COMPLAINT_URL, ISSUE_CATEGORY_URL, DEPARTMENT_URL } from './Url';
 import { MoreVert } from '@mui/icons-material';
+import eyeViewIcon from '../assets/images/eyeViewIcon.svg';
+import complaintDeleteIcon from '../assets/images/complaintDeleteIcon.svg';
 import {
   Box,
   FormControl,
@@ -303,14 +305,14 @@ function MUITicketSystem() {
           }}
           sx={{ padding: '0px' }}
         >
-          <img src="eyeViewIcon.svg" alt="View" style={{ width: 32, height: 32 }} />
+          <img src={eyeViewIcon} alt="View" style={{ width: 32, height: 32 }} />
         </IconButton>,
         <IconButton
           key={`delete-${params.row.ticket_id}`}
           onClick={() => deleteRows(params.row.ticket_id)}
           sx={{ padding: '0px' }}
         >
-          <img src="complaintDeleteIcon.svg" alt="Delete" style={{ width: 32, height: 32 }} />
+          <img src={complaintDeleteIcon} alt="Delete" style={{ width: 32, height: 32 }} />
         </IconButton>,
         <IconButton
           key={`more-${params.row.ticket_id}`}

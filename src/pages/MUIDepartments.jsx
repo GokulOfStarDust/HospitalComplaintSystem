@@ -5,6 +5,8 @@ import { BASE_URL, DEPARTMENT_URL } from './Url';
 import { TextField, Button, Checkbox, FormControlLabel, Box, InputAdornment, IconButton } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import SearchIcon from '@mui/icons-material/Search';
+import editIcon from '../assets/images/editIcon.jpg';
+import deleteIcon from '../assets/images/deleteIcon.jpg';
 
 function MUIDepartments() {
     const [isEditMode, setIsEditMode] = useState(false);
@@ -186,13 +188,13 @@ function MUIDepartments() {
                         }}
                         sx={{ padding: 1 }}
                     >
-                        <img src="editIcon.jpg" alt="Edit" className="size-8 flex-shrink-0 hover:cursor-pointer" />
+                        <img src={editIcon} alt="Edit" className="size-8 flex-shrink-0 hover:cursor-pointer" />
                     </IconButton>
                     <IconButton
                         onClick={() => deleteRows(params.row.department_code)}
                         sx={{ padding: 0 }}
                     >
-                        <img src="deleteIcon.jpg" alt="Delete" className="size-8 flex-shrink-0 hover:cursor-pointer" />
+                        <img src={deleteIcon} alt="Delete" className="size-8 flex-shrink-0 hover:cursor-pointer" />
                     </IconButton>
                 </Box>
             ),

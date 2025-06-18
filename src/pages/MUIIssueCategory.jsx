@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import axios from 'axios';
 import { BASE_URL, DEPARTMENT_URL, ISSUE_CATEGORY_URL } from './Url';
+import editIcon from '../assets/images/editIcon.jpg';
+import deleteIcon from '../assets/images/deleteIcon.jpg';
 import {
   Box,
   TextField,
@@ -236,13 +238,13 @@ function MUIIssueCategory() {
             }}
             sx={{ padding: 1 }}
           >
-            <img src="editIcon.jpg" alt="Edit" className="size-8 flex-shrink-0 hover:cursor-pointer" />
+            <img src={editIcon} alt="Edit" className="size-8 flex-shrink-0 hover:cursor-pointer" />
           </IconButton>
           <IconButton
             onClick={() => deleteRows(params.row.issue_category_code)}
             sx={{ padding: 0 }}
           >
-            <img src="deleteIcon.jpg" alt="Delete" className="size-8 flex-shrink-0 hover:cursor-pointer" />
+            <img src={deleteIcon} alt="Delete" className="size-8 flex-shrink-0 hover:cursor-pointer" />
           </IconButton>
         </Box>
       ),

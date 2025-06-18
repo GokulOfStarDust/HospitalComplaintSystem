@@ -4,6 +4,10 @@ import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
 import axios from 'axios';
 import { BASE_URL, COMPLAINT_URL } from './Url';
+import ticketDetailFormEditIcon from '../assets/images/ticketDetailFormEditIcon.png';
+import closeIcon from '../assets/images/closeIcon.png';
+import photoIcon from '../assets/images/photoIcon.svg';
+import uploadButtonIcon from '../assets/images/uploadButtonIcon.svg';
 import {
   Box,
   Typography,
@@ -156,7 +160,7 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }} key="edit-button">
           <IconButton onClick={() => setIsEditable(!isEditable)} aria-label="Edit ticket" key="edit-icon">
-            <img src="ticketDetailFormEditIcon.png" alt="Edit Icon" className="size-9" />
+            <img src={ticketDetailFormEditIcon} alt="Edit Icon" className="size-9" />
           </IconButton>
           <IconButton
             onClick={() => setViewTicket(!viewTicket)}
@@ -169,7 +173,7 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
             aria-label="Close ticket form"
             key="close-icon"
           >
-            <img src="closeIcon.png" alt="Close Icon" className="size-4" /> {/* Adjusted image size */}
+            <img src={closeIcon} alt="Close Icon" className="size-4" /> {/* Adjusted image size */}
           </IconButton>
         </Box>
       </Box>
@@ -240,7 +244,7 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
                   key={`file-${index}`}
                   sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', width: '100%', border: '1px solid #E5E7EB' }}
                 >
-                  <img className="p-3" src="photoIcon.svg" alt="Photo Icon" key={`photo-icon-${index}`} />
+                  <img className="p-3" src={photoIcon} alt="Photo Icon" key={`photo-icon-${index}`} />
                   <Link
                     href={file.image || URL.createObjectURL(file)}
                     target="_blank"
@@ -261,7 +265,7 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
             </Box>
             <FormControl key="upload-button-container">
               <FormLabel htmlFor="uploadFile" key="upload-button-label">
-                <img className={isEditable ? '' : 'grayscale'} src="uploadButtonIcon.svg" alt="Upload Icon" />
+                <img className={isEditable ? '' : 'grayscale'} src={uploadButtonIcon} alt="Upload Icon" />
               </FormLabel>
               <Input
                 key="file-input"

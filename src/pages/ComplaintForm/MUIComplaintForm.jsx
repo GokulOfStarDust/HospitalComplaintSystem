@@ -3,6 +3,9 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import axios from 'axios';
 import { BASE_URL, COMPLAINT_URL, ISSUE_CATEGORY_URL } from '../Url';
+import photoIcon from '../../assets/images/photoIcon.svg';
+import deleteFileIcon from '../../assets/images/deleteFileIcon.svg';
+import uploadButtonIcon from '../../assets/images/uploadButtonIcon.svg';
 import {
   Box,
   Typography,
@@ -359,7 +362,7 @@ const MUIComplaintForm = () => {
                         pr: 1,
                       }}
                     >
-                      <img className="p-3" src="photoIcon.svg" alt="Photo Icon" />
+                      <img className="p-3" src={photoIcon} alt="Photo Icon" />
                       <Typography variant="body2" sx={{ width: '60%', color: 'text.secondary' }}>
                         {file.name}
                       </Typography>
@@ -368,14 +371,14 @@ const MUIComplaintForm = () => {
                         sx={{ color: 'error.main', '&:hover': { color: 'error.dark' }, ml: 'auto', px: 1 }}
                         aria-label={`Delete file ${file.name}`}
                       >
-                        <img src="deleteFileIcon.svg" alt="Delete File Icon" />
+                        <img src={deleteFileIcon} alt="Delete File Icon" />
                       </IconButton>
                     </Box>
                   ))}
                 </Box>
                 <FormControl>
                   <FormLabel htmlFor="uploadFile">
-                    <img src="uploadButtonIcon.svg" alt="Upload Icon" />
+                    <img src={uploadButtonIcon} alt="Upload Icon" />
                   </FormLabel>
                   <Input
                     id="uploadFile"

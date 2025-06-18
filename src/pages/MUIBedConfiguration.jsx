@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import axios from 'axios';
 import handleQRCodePrint, { QRCodePrinter } from './PrintQRCode';
+import DeleteIcon from '../assets/images/deleteIcon.jpg';
+import EditIcon from '../assets/images/editIcon.jpg';
 import {
   TextField,
   Select,
@@ -223,10 +225,10 @@ function MUIBedConfiguration() {
             }}
             sx={{ padding: 0 }}
           >
-            <img src="editIcon.jpg" alt="Edit" className="size-8 flex-shrink-0 hover:cursor-pointer" />
+            <img src={EditIcon} alt="Edit" className="size-8 flex-shrink-0 hover:cursor-pointer" />
           </IconButton>
           <IconButton onClick={() => deleteRows(params.row.id)} sx={ { padding: 0 }}>
-            <img src="deleteIcon.jpg" alt="Delete" className="size-8 flex-shrink-0 hover:cursor-pointer" />
+            <img src={DeleteIcon} alt="Delete" className="size-8 flex-shrink-0 hover:cursor-pointer" />
           </IconButton>
           <IconButton
             onClick={(event) => handleMenuClick(event, params.row.id)}
@@ -546,6 +548,7 @@ function MUIBedConfiguration() {
               height: '4vh',
               textTransform: 'none',
               backgroundColor: '#04B7B1',
+              color: '#FFFFFF',
               '&:hover': { backgroundColor: '#03A6A0' },
             }}
           >
