@@ -9,6 +9,8 @@
   import { DataGrid } from '@mui/x-data-grid';
   import CloseIcon from '@mui/icons-material/Close';
   import CustomOverlay from './CustomOverlay';
+  import { format, parse, isValid } from 'date-fns';
+
 
   function TicketTATReport() {
 
@@ -64,8 +66,8 @@
 
         params.date = filters.date || '';
         params.priority = filters.priority || '';
-        params.start_time = filters.start_time || '';
-        params.end_time = filters.end_time || '';
+        params.start_time = convertTimeToUTC(filters.start_time) || '';
+        params.end_time = convertTimeToUTC(filters.end_time) || '';
         console.log("API Request Parameters:", params);
 
         const response = await axios.get(`${BASE_URL}${TICKET_TAT_URL}`, { params });
@@ -90,7 +92,7 @@
         const formattedRows = Array.isArray(data.results) ? data.results.map((item, index) => ({
           id: index + 1, // Unique ID for DataGrid
           ticket_id: item.ticket_id || 'N/A',
-          submitted_at: new Date(item.submitted_at).toLocaleString('en-GB', {hour12: true}) || 'N/A',
+          submitted_at: new Date(item.submitted_at).toLocaleString('en-GB') || 'N/A',
           resolved_at: item.resolved_at || 'N/A',
           tat: item.tat || 'N/A',
           priority: item.priority || 'N/A',
@@ -99,9 +101,6 @@
           resolved: item.resolved || 0,
           department: item.department || 'N/A', // Assuming department is part of the response
         })) : [];
-
-
-      
 
         setRows(formattedRows);
         
@@ -114,16 +113,25 @@
     };
 
 
+    const convertTimeToUTC = (inputTime) => {
+      if (!inputTime) return '';
+      const date = filters.date || format(new Date(), 'yyyy-MM-dd');
+      const localTimeInput = `${date}T${inputTime}:00+05:30`;
 
-    // Fetch data when page, pageSize, or filterModel changes
+      const localDate = new Date(localTimeInput); // This respects the +05:30 offset
+
+      if (!isValid(localDate)) return '';
+      // Return just the UTC time portion
+      return localDate.toISOString().slice(11, 16); 
+    };
+
     useEffect(() => {
       fetchRows();
     }, [page, pageSize, filterModel]);
 
-    // Handle filter changes
     const handleFilterModelChange = (newFilterModel) => {
       setFilterModel(newFilterModel);
-      setPage(0); // Reset to first page on filter change
+      setPage(0); 
     };
 
   // useEffect(() => {
@@ -279,7 +287,7 @@
                     slotProps={{ inputLabel: { shrink: true } }}
                     sx={{ mb: 2 }}
                     value={filters.start_time}
-                    onChange={(e) => setFilters({ ...filters, start_time: e.target.value })}
+                    onChange={(e) => setFilters({ ...filters, start_time:  e.target.value })} // Convert to UTC
                   />
                   <TextField
                     label="End Time"
@@ -288,7 +296,7 @@
                     slotProps={{ inputLabel: { shrink: true } }}
                     sx={{ mb: 2 }}
                     value={filters.end_time}
-                    onChange={(e) => setFilters({ ...filters, end_time: e.target.value })}
+                    onChange={(e) => setFilters({ ...filters, end_time: e.target.value })} // Convert to UTC
                   />
               
                   {/* Priority Dropdown */}
@@ -342,8 +350,8 @@
                           setSearchParams({
                             priority: filters.priority,
                             date: filters.date,
-                            end_time: filters.end_time,
-                            start_time: filters.start_time,
+                            end_time: convertTimeToUTC(filters.end_time),
+                            start_time: convertTimeToUTC(filters.start_time),
                           });
                           fetchRows();
                           setPage(0); // Reset to first page on filter application
