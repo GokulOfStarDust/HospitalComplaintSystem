@@ -10,25 +10,19 @@ import {
   Checkbox,
   FormControlLabel,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   IconButton,
   Menu as MuiMenu,
   MenuItem as MuiMenuItem,
   Typography,
 } from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
 import { Edit, Delete, MoreVert } from '@mui/icons-material';
 import { BASE_URL, ROOMS_URL } from './Url';
 
 function MUIBedConfiguration() {
   const [roomQR, setRoomQRCode] = useState([]);
   const [tableContent, setTableContent] = useState({ results: [], count: 0 });
-  const [pageNumber, setPageNumber] = useState(1);
+  const [pageNumber, setPageNumber] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [isEditable, setIsEditable] = useState(false);
   const [idToEdit, setIdToEdit] = useState(null);
@@ -101,7 +95,7 @@ function MUIBedConfiguration() {
     try {
       const params = {
         limit: pageSize,
-        offset: (pageNumber - 1) * pageSize,
+        offset: pageNumber * pageSize,
       };
 
       const response = await axios.get(`${BASE_URL}${ROOMS_URL}`, { params });
@@ -119,7 +113,6 @@ function MUIBedConfiguration() {
       }));
 
       setRoomQRCode((prev) => {
-        // Remove duplicates by ID
         const existingIds = new Set(prev.map((item) => item.id));
         const newData = dataForQr.filter((item) => !existingIds.has(item.id));
         return [...prev, ...newData];
@@ -154,220 +147,161 @@ function MUIBedConfiguration() {
     setSelectedRowId(null);
   };
 
-  // Calculate total pages
-  const totalPages = Math.max(1, Math.ceil(tableContent.count / pageSize));
+  const columns = [
+    {
+      field: 'toPrint',
+      headerName: '',
+      width: 100,
+      headerAlign: 'center',
+      align: 'center',
+      flex: 1.5,
+      minWidth: 50,
+      filterable: false, // Disable filter option for this column
+      sortable: false,
+      disableColumnMenu: true,
+      renderHeader: () => (
+        <Checkbox
+          checked={masterChecked}
+          onChange={(e) => {
+            const isChecked = e.target.checked;
+            setMasterChecked(isChecked);
+            const updatedRoomQR = roomQR.map((item) => ({
+              ...item,
+              toPrint: isChecked && item.status === 'active',
+            }));
+            setRoomQRCode(updatedRoomQR);
+          }}
+          sx={{ color: '#04B7B1', '&.Mui-checked': { color: '#04B7B1' }, transform: 'scale(1)' }}
+        />
+      ),
+      renderCell: (params) => (
+        <Checkbox
+          checked={!!roomQR?.find((item) => item?.id === params.row.id)?.toPrint}
+          onChange={() => {
+            if (params.row.status === 'active') {
+              const updated = roomQR.map((item) =>
+                item?.id === params.row.id ? { ...item, toPrint: !item.toPrint } : item
+              );
+              setRoomQRCode(updated);
+              if (!updated.find((item) => item?.id === params.row.id)?.toPrint) {
+                setMasterChecked(false);
+              }
+            }
+          }}
+          sx={{ color: '#04B7B1', '&.Mui-checked': { color: '#04B7B1' }, transform: 'scale(0.9)' }}
+        />
+      ),
+    },
+    { field: 'bed_no', headerName: 'Bed No', flex: 1.5, minWidth: 100 },
+    { field: 'room_no', headerName: 'Room No', flex: 1.5, minWidth: 130 },
+    { field: 'Block', headerName: 'Block', flex: 1.5, minWidth: 100 },
+    { field: 'Floor_no', headerName: 'Floor', flex: 1.5, minWidth: 100 },
+    { field: 'ward', headerName: 'Ward', flex: 1.5, minWidth: 150 },
+    { field: 'speciality', headerName: 'Speciality', flex: 1.5, minWidth: 150 },
+    { field: 'room_type', headerName: 'Room Type', flex: 1.5, minWidth: 150 },
+    { field: 'status', headerName: 'Status', flex: 1.5, minWidth: 150 },
+    {
+      field: 'actions',
+      headerName: 'Action',
+      width: 150,
+      renderCell: (params) => (
+        <div className="flex items-center justify-start gap-x-2">
+          <IconButton
+            onClick={() => {
+              setIsEditable(true);
+              reset({
+                bed_no: params.row.bed_no,
+                room_no: params.row.room_no,
+                Floor_no: params.row.Floor_no,
+                Block: params.row.Block,
+                room_type: params.row.room_type,
+                speciality: params.row.speciality,
+                ward: params.row.ward,
+                status: params.row.status === 'active',
+              });
+              setIdToEdit(params.row.id);
+            }}
+            sx={{ padding: 0 }}
+          >
+            <img src="editIcon.jpg" alt="Edit" className="size-8 flex-shrink-0 hover:cursor-pointer" />
+          </IconButton>
+          <IconButton onClick={() => deleteRows(params.row.id)} sx={ { padding: 0 }}>
+            <img src="deleteIcon.jpg" alt="Delete" className="size-8 flex-shrink-0 hover:cursor-pointer" />
+          </IconButton>
+          <IconButton
+            onClick={(event) => handleMenuClick(event, params.row.id)}
+            size="small"
+            sx={{ padding: 0 }}
+          >
+            <MoreVert fontSize="small" />
+          </IconButton>
+          <MuiMenu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl) && selectedRowId === params.row.id}
+            onClose={handleMenuClose}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
+            <MuiMenuItem onClick={handleMenuClose}>History</MuiMenuItem>
+            <MuiMenuItem
+              onClick={() => {
+                handleQRCodePrint([{ id: params.row.id, qrCodeUrl: params.row.qr_code, toPrint: true }]);
+                handleMenuClose();
+              }}
+            >
+              Print QR Code
+            </MuiMenuItem>
+          </MuiMenu>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <main className="h-svh flex flex-row gap-x-4 justify-between items-center">
       <section className="w-[70%] h-[85vh] flex flex-col justify-start rounded-xl bg-white">
         <QRCodePrinter roomQR={roomQR} />
-        <TableContainer component={Paper} sx={{ height: '85vh', width: '100%' }}>
-          <Table sx={{ tableLayout: 'fixed', width: '100%' }}>
-            <TableHead sx={{ position: 'sticky', top: 0, zIndex: 1 }}>
-              <TableRow sx={{ backgroundColor: '#FAF9F9', height: '50px' }}>
-                <TableCell
-                  sx={{
-                    padding: '0 0.75rem',
-                    width: '100px',
-                    fontSize: '0.875rem',
-                    fontWeight: 'medium',
-                    color: '#616161',
-                    borderRight: 'none',
-                  }}
-                >
-                  <Checkbox
-                    checked={masterChecked}
-                    onChange={(e) => {
-                      const isChecked = e.target.checked;
-                      setMasterChecked(isChecked);
-                      const updatedRoomQR = roomQR.map((item) => ({
-                        ...item,
-                        toPrint: isChecked && item.status === 'active',
-                      }));
-                      setRoomQRCode(updatedRoomQR);
-                    }}
-                    sx={{ color: '#04B7B1', '&.Mui-checked': { color: '#04B7B1' }, transform: 'scale(1)' }}
-                  />
-                </TableCell>
-                <TableCell sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
-                  Bed No
-                </TableCell>
-                <TableCell sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
-                  Room No
-                </TableCell>
-                <TableCell
-                  sx={{
-                    padding: '0 0.75rem',
-                    fontSize: '0.875rem',
-                    fontWeight: 'medium',
-                    color: '#616161',
-                    width: '96px',
-                  }}
-                >
-                  Block
-                </TableCell>
-                <TableCell
-                  sx={{
-                    padding: '0 0.75rem',
-                    fontSize: '0.875rem',
-                    fontWeight: 'medium',
-                    color: '#616161',
-                    width: '80px',
-                  }}
-                >
-                  Floor
-                </TableCell>
-                <TableCell sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
-                  Ward
-                </TableCell>
-                <TableCell sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
-                  Speciality
-                </TableCell>
-                <TableCell sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
-                  Room Type
-                </TableCell>
-                <TableCell sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
-                  Status
-                </TableCell>
-                <TableCell
-                  sx={{
-                    padding: '0 0.75rem',
-                    fontSize: '0.875rem',
-                    fontWeight: 'medium',
-                    color: '#616161',
-                    borderLeft: 'none',
-                  }}
-                >
-                  Action
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {Array.isArray(tableContent.results) &&
-                tableContent.results.map((record) => (
-                  <TableRow key={record.id} sx={{ '&:hover': { backgroundColor: '#FAF9F9' }, height: '6.7vh' }}>
-                    <TableCell sx={{ padding: '0 0.75rem', width: '100px', borderRight: 'none' }}>
-                      <Checkbox
-                        checked={!!roomQR?.find((item) => item?.id === record.id)?.toPrint}
-                        onChange={() => {
-                          if (record.status === 'active') {
-                            const updated = roomQR.map((item) =>
-                              item?.id === record.id ? { ...item, toPrint: !item.toPrint } : item
-                            );
-                            setRoomQRCode(updated);
-                            if (!updated.find((item) => item?.id === record.id)?.toPrint) {
-                              setMasterChecked(false);
-                            }
-                          }
-                        }}
-                        sx={{ color: '#04B7B1', '&.Mui-checked': { color: '#04B7B1' }, transform: 'scale(0.9)' }}
-                      />
-                    </TableCell>
-                    <TableCell sx={{ padding: '0 0.75rem', fontSize: '0.875rem', color: '#616161' }}>
-                      {record.bed_no}
-                    </TableCell>
-                    <TableCell sx={{ padding: '0 0.75rem', fontSize: '0.875rem', color: '#616161' }}>
-                      {record.room_no}
-                    </TableCell>
-                    <TableCell sx={{ padding: '0 0.75rem', fontSize: '0.875rem', color: '#616161' }}>
-                      {record.Block}
-                    </TableCell>
-                    <TableCell sx={{ padding: '0 0.75rem', fontSize: '0.875rem', color: '#616161' }}>
-                      {record.Floor_no}
-                    </TableCell>
-                    <TableCell sx={{ padding: '0 0.75rem', fontSize: '0.875rem', color: '#616161' }}>
-                      {record.ward}
-                    </TableCell>
-                    <TableCell sx={{ padding: '0 0.75rem', fontSize: '0.875rem', color: '#616161' }}>
-                      {record.speciality}
-                    </TableCell>
-                    <TableCell sx={{ padding: '0 0.75rem', fontSize: '0.875rem', color: '#616161' }}>
-                      {record.room_type}
-                    </TableCell>
-                    <TableCell sx={{ padding: '0 0.75rem', fontSize: '0.875rem', color: '#616161' }}>
-                      {record.status}
-                    </TableCell>
-                    <TableCell sx={{ padding: '0 0.75rem', color: '#616161', borderLeft: 'none' }}>
-                      <div className="flex items-center justify-start gap-x-2">
-                        <IconButton
-                          onClick={() => {
-                            setIsEditable(true);
-                            reset({
-                              bed_no: record.bed_no,
-                              room_no: record.room_no,
-                              Floor_no: record.Floor_no,
-                              Block: record.Block,
-                              room_type: record.room_type,
-                              speciality: record.speciality,
-                              ward: record.ward,
-                              status: record.status === 'active',
-                            });
-                            setIdToEdit(record.id);
-                          }}
-                          sx={{ padding: 0 }}
-                        >
-                          <img src="editIcon.jpg" alt="Edit" className="size-8 flex-shrink-0 hover:cursor-pointer" />
-                        </IconButton>
-                        <IconButton onClick={() => deleteRows(record.id)} sx={{ padding: 0 }}>
-                          <img src="deleteIcon.jpg" alt="Delete" className="size-8 flex-shrink-0 hover:cursor-pointer" />
-                        </IconButton>
-                        <IconButton
-                          onClick={(event) => handleMenuClick(event, record.id)}
-                          size="small"
-                          sx={{ padding: 0 }}
-                        >
-                          <MoreVert fontSize="small" />
-                        </IconButton>
-                        <MuiMenu
-                          anchorEl={anchorEl}
-                          open={Boolean(anchorEl) && selectedRowId === record.id}
-                          onClose={handleMenuClose}
-                          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-                        >
-                          <MuiMenuItem onClick={handleMenuClose}>History</MuiMenuItem>
-                          <MuiMenuItem
-                            onClick={() => {
-                              handleQRCodePrint([{ id: record.id, qrCodeUrl: record.qr_code, toPrint: true }]);
-                              handleMenuClose();
-                            }}
-                          >
-                            Print QR Code
-                          </MuiMenuItem>
-                        </MuiMenu>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              {Array(pageSize - (tableContent.results?.length || 0)).fill(null).map((_, i) => (
-                <TableRow key={`empty-${i}`} sx={{ height: '6.7vh' }}>
-                  <TableCell sx={{ padding: '0 0.75rem', borderRight: 'none' }}> </TableCell>
-                  {Array(8).fill(null).map((_, idx) => (
-                    <TableCell key={idx} sx={{ padding: '0 0.75rem' }}> </TableCell>
-                  ))}
-                  <TableCell sx={{ padding: '0 0.75rem', borderLeft: 'none' }}> </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <div className="flex flex-row justify-end items-center px-4 py-2 bg-[#FAF9F9]">
-          <div className="mx-4 text-sm text-secondary">
-            Page {pageNumber} of {totalPages}
-          </div>
-          <Button onClick={() => setPageNumber((prev) => Math.max(1, prev - 1))} disabled={pageNumber === 1}>
-            <img src="prevIcon.svg" alt="Previous" />
-          </Button>
-          <Button
-            onClick={() => setPageNumber((prev) => Math.min(totalPages, prev + 1))}
-            disabled={pageNumber === totalPages || tableContent.count === 0}
-          >
-            <img src="nextIcon.svg" alt="Next" />
-          </Button>
-        </div>
+        <DataGrid
+          rows={tableContent.results}
+          columns={columns}
+          pageSizeOptions={[10, 25, 50]}
+          rowCount={tableContent.count}
+          rowHeight={64}
+          paginationMode="server"
+          paginationModel={{ page: pageNumber, pageSize }}
+          onPaginationModelChange={(newModel) => {
+            setPageNumber(newModel.page);
+            setPageSize(newModel.pageSize);
+          }}
+          sx={{
+            height: '100%',
+            width: '100%',
+            '& .MuiDataGrid-columnHeaders': {
+              backgroundColor: '#616161',
+              color: '#616161',
+              fontSize: '0.875rem',
+              fontWeight: 'medium',
+            },
+            '& .MuiDataGrid-cell': {
+              padding: '1rem 0.75rem',
+              fontSize: '0.875rem',
+              color: '#616161',
+              display: 'flex',
+              alignItems: 'center',
+            },
+            
+            '& .MuiDataGrid-row:hover': {
+              backgroundColor: '#FAF9F9',
+            },
+            '& .MuiDataGrid-footerContainer': {
+              backgroundColor: '#FAF9F9',
+              justifyContent: 'flex-end',
+            },
+          }}
+          disableRowSelectionOnClick
+        />
       </section>
 
-      {/* Form section remains unchanged */}
       <section className="flex flex-col justify-between w-[30%] h-[95vh] bg-white rounded-xl">
         <div className="flex flex-col bg-[#FAF9F9] py-3 px-4 rounded-t-xl">
           <p className="font-sans text-secondary">Bed Configuration</p>

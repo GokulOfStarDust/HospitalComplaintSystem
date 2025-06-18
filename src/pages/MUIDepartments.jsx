@@ -2,17 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import axios from 'axios';
 import { BASE_URL, DEPARTMENT_URL } from './Url';
-import { TextField, Button, Checkbox, FormControlLabel, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Box, Typography, InputAdornment } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+import { TextField, Button, Checkbox, FormControlLabel, Box, InputAdornment, IconButton } from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
 import SearchIcon from '@mui/icons-material/Search';
 
 function MUIDepartments() {
     const [isEditMode, setIsEditMode] = useState(false);
     const [deptCodeToEdit, setDeptCodeToEdit] = useState(null);
     const [pageNumber, setPageNumber] = useState(1);
-    const [tableContent, setTableContent] = useState([]);
+    const [tableContent, setTableContent] = useState({ results: [], count: 0 });
     const [activeCheckbox, setActiveCheckbox] = useState(false);
+    const [pageSize, setPageSize] = useState(5);
+    const [selectedRows, setSelectedRows] = useState([]);
 
     const {
         control,
@@ -34,7 +35,7 @@ function MUIDepartments() {
         data.status = data.status ? 'active' : 'inactive';
 
         try {
-            const response = await axios({
+            await axios({
                 method: METHOD,
                 url: url,
                 data: data,
@@ -56,6 +57,23 @@ function MUIDepartments() {
         }
     };
 
+    const handleSelectAll = (event) => {
+        if (event.target.checked) {
+            const allRowIds = tableContent.results.map((row) => row.department_code);
+            setSelectedRows(allRowIds);
+        } else {
+            setSelectedRows([]);
+        }
+    };
+
+    const handleRowSelect = (department_code) => {
+        setSelectedRows((prev) =>
+            prev.includes(department_code)
+                ? prev.filter((id) => id !== department_code)
+                : [...prev, department_code]
+        );
+    };
+
     useEffect(() => {
         reset({
             department_code: '',
@@ -66,8 +84,11 @@ function MUIDepartments() {
 
     const fetchRows = async () => {
         try {
-            const response = await axios.get(`${BASE_URL}${DEPARTMENT_URL}?page=${pageNumber}`);
-            setTableContent(response.data);
+            const response = await axios.get(`${BASE_URL}${DEPARTMENT_URL}?page=${pageNumber}&page_size=${pageSize}`);
+            setTableContent({
+                results: response.data.results,
+                count: response.data.count,
+            });
             console.log("Table Content:", response.data);
         } catch (error) {
             console.error('Error fetching data:', error.response?.statusText || error.message);
@@ -76,7 +97,7 @@ function MUIDepartments() {
 
     useEffect(() => {
         fetchRows();
-    }, [pageNumber]);
+    }, [pageNumber, pageSize]);
 
     const deleteRows = async (department_code) => {
         try {
@@ -92,10 +113,98 @@ function MUIDepartments() {
         }
     };
 
+    const columns = [
+        {
+            field: 'select',
+            headerName: '',
+            width: 60,
+            headerAlign: 'center',
+            align: 'center',
+            sortable: false,
+            filterable: false,
+            disableColumnMenu: true,
+            renderHeader: () => (
+                <Checkbox
+                    checked={
+                        tableContent.results.length > 0 &&
+                        tableContent.results.every((row) =>
+                            selectedRows.includes(row.department_code)
+                        )
+                    }
+                    onChange={handleSelectAll}
+                    sx={{
+                        color: '#04B7B1',
+                        '&.Mui-checked': { color: '#04B7B1' },
+                        transform: 'scale(1)',
+                    }}
+                />
+            ),
+            renderCell: (params) => (
+                <Checkbox
+                    checked={selectedRows.includes(params.row.department_code)}
+                    onChange={() => handleRowSelect(params.row.department_code)}
+                    sx={{
+                        color: '#04B7B1',
+                        '&.Mui-checked': { color: '#04B7B1' },
+                        transform: 'scale(1)',
+                    }}
+                />
+            ),
+        },
+        {
+            field: 'department_code',
+            headerName: 'Department Code',
+            flex: 1,
+            minWidth: 130,
+            renderCell: (params) => <div style={{ fontSize: '0.875rem', color: '#616161' }}>{params.value}</div>,
+        },
+        {
+            field: 'department_name',
+            headerName: 'Department Name',
+            flex: 1,
+            minWidth: 150,
+            renderCell: (params) => <div style={{ fontSize: '0.875rem', color: '#616161' }}>{params.value}</div>,
+        },
+        {
+            field: 'actions',
+            headerName: 'Actions',
+            headerAlign: 'center',
+            align: 'center',
+            width: 150,
+            renderCell: (params) => (
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <IconButton
+                        onClick={() => {
+                            setIsEditMode(true);
+                            reset({
+                                department_code: params.row.department_code,
+                                department_name: params.row.department_name,
+                                status: params.row.status === 'active',
+                            });
+                            setActiveCheckbox(params.row.status === 'active');
+                            setDeptCodeToEdit(params.row.department_code);
+                        }}
+                        sx={{ padding: 1 }}
+                    >
+                        <img src="editIcon.jpg" alt="Edit" className="size-8 flex-shrink-0 hover:cursor-pointer" />
+                    </IconButton>
+                    <IconButton
+                        onClick={() => deleteRows(params.row.department_code)}
+                        sx={{ padding: 0 }}
+                    >
+                        <img src="deleteIcon.jpg" alt="Delete" className="size-8 flex-shrink-0 hover:cursor-pointer" />
+                    </IconButton>
+                </Box>
+            ),
+            sortable: false,
+            filterable: false,
+        },
+    ];
+
     return (
-        <main className='w-screen h-screen flex flex-col gap-y-4 p-4 font-sans'>
-            <section className='w-[100%] flex flex-col rounded-md bg-white p-4'>
-                <form className='flex flex-col gap-y-4 pt-3' onSubmit={handleSubmit(formDataHandler)}>
+        <main className="w-screen h-screen flex flex-col gap-y-4 p-4 font-sans">
+            <section className="w-[100%] flex flex-col rounded-md bg-white p-4">
+                <form className="flex flex-col gap-y-4 pt-3" onSubmit={handleSubmit(formDataHandler)}>
                     <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', gap: 2 }}>
                         <Box sx={{ width: '15%', display: 'flex', flexDirection: 'column', gap: 1 }}>
                             <Controller
@@ -106,10 +215,10 @@ function MUIDepartments() {
                                     <TextField
                                         {...field}
                                         disabled={isEditMode}
-                                        id='deptCode'
-                                        label='Department Code'
-                                        variant='outlined'
-                                        size='small'
+                                        id="deptCode"
+                                        label="Department Code"
+                                        variant="outlined"
+                                        size="small"
                                         fullWidth
                                         InputLabelProps={{ shrink: true }}
                                         error={!!errors.department_code}
@@ -126,10 +235,10 @@ function MUIDepartments() {
                                 render={({ field }) => (
                                     <TextField
                                         {...field}
-                                        id='deptName'
-                                        label='Department Name'
-                                        variant='outlined'
-                                        size='small'
+                                        id="deptName"
+                                        label="Department Name"
+                                        variant="outlined"
+                                        size="small"
                                         InputLabelProps={{ shrink: true }}
                                         fullWidth
                                         error={!!errors.department_name}
@@ -148,25 +257,25 @@ function MUIDepartments() {
                                     control={
                                         <Checkbox
                                             {...field}
-                                            id='deptStatus'
+                                            id="deptStatus"
                                             checked={activeCheckbox}
                                             onChange={(e) => {
                                                 setActiveCheckbox(e.target.checked);
-                                                setValue("status", e.target.checked);
+                                                setValue('status', e.target.checked);
                                             }}
-                                            color='primary'
+                                            color="primary"
                                         />
                                     }
-                                    label='Active'
+                                    label="Active"
                                 />
                             )}
                         />
                         <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 2, width: '30%' }}>
                             {isEditMode ? (
                                 <Button
-                                    variant='outlined'
-                                    color='secondary'
-                                    sx={{width: '100px', height: '40px', fontSize: '0.875rem', fontWeight: '500'}}
+                                    variant="outlined"
+                                    color="secondary"
+                                    sx={{ width: '100px', height: '40px', fontSize: '0.875rem', fontWeight: '500' }}
                                     onClick={(e) => {
                                         e.preventDefault();
                                         setIsEditMode(false);
@@ -181,9 +290,9 @@ function MUIDepartments() {
                                 </Button>
                             ) : (
                                 <Button
-                                    variant='outlined'
-                                    sx={{width: '100px', height: '40px', fontSize: '0.875rem', fontWeight: '500'}}
-                                    color='secondary'
+                                    variant="outlined"
+                                    sx={{ width: '100px', height: '40px', fontSize: '0.875rem', fontWeight: '500' }}
+                                    color="secondary"
                                     onClick={(e) => {
                                         e.preventDefault();
                                         reset({
@@ -197,10 +306,10 @@ function MUIDepartments() {
                                 </Button>
                             )}
                             <Button
-                                variant='contained'
-                                color='primary'
-                                type='submit'
-                                sx={{color: '#fff', width: '100px', height: '40px', fontSize: '0.875rem', fontWeight: '500'}}
+                                variant="contained"
+                                color="primary"
+                                type="submit"
+                                sx={{ color: '#fff', width: '100px', height: '40px', fontSize: '0.875rem', fontWeight: '500' }}
                             >
                                 {isEditMode ? 'Update' : 'Save'}
                             </Button>
@@ -209,13 +318,13 @@ function MUIDepartments() {
                 </form>
             </section>
 
-            <section className='w-[98%] ml-4 flex flex-col rounded-md bg-white flex-1 min-h-0'>
-                <Box sx={{ height: 56, width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 2, my: 1, pr: 3 }}>
+            <section className="w-[100%]  flex flex-col rounded-md bg-white flex-1 min-h-0">
+                <Box sx={{ height: 56, width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 2, pt:1, pr: 3 }}>
                     <TextField
-                        variant='standard'
-                        size='small'
-                        placeholder='Search'
-                        sx={{ 
+                        variant="standard"
+                        size="small"
+                        placeholder="Search"
+                        sx={{
                             width: '20%',
                             '& .MuiInput-root': {
                                 borderBottom: '1px solid rgba(0, 0, 0, 0.42)',
@@ -238,59 +347,70 @@ function MUIDepartments() {
                             ),
                         }}
                     />
-                </Box>
+                </Box>   
 
-                <TableContainer component={Paper} className='flex flex-col flex-1 min-h-0'>
-                    <Table sx={{  width: '100%' }} className='font-sans table-fixed border-collapse w-full'>
-                        <TableHead sx={{ position: 'sticky', top: 0, zIndex: 1 }}>
-                            <TableRow sx={{ backgroundColor: '#FAF9F9', height: '50px', width: '100%' }}>
-                                <TableCell style={{ width: '3%' }} sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
-                                    <Checkbox color='primary' />
-                                </TableCell>
-                                <TableCell style={{ width: '20%' }} sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>Department Code</TableCell>
-                                <TableCell style={{ width: '30%' }} sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>Department Name</TableCell>
-                                <TableCell style={{ width: '3%' }} sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody sx={{width:'100%', flexShrink: '' }} >
-                            {Array.isArray(tableContent.results) &&
-                                tableContent.results.map((record, index) => (
-                                    <TableRow key={record.department_code + index} hover sx={{width: '100%'}}>
-                                        <TableCell sx={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', color: '#616161' }}>
-                                            <Checkbox color='primary' />
-                                        </TableCell>
-                                        <TableCell sx={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', color: '#616161' }}>{record.department_code}</TableCell>
-                                        <TableCell sx={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', color: '#616161'}}>{record.department_name}</TableCell>
-                                        <TableCell sx={{ paddingX: '0.5rem', paddingRight :'0.85rem', fontSize: '0.875rem', color: '#616161' }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <IconButton
-                                                    onClick={() => {
-                                                        setIsEditMode(true);
-                                                        reset({
-                                                            department_code: record.department_code,
-                                                            department_name: record.department_name,
-                                                            status: record.status === 'active' ? true : false,
-                                                        });
-                                                        setActiveCheckbox(record.status === 'active');
-                                                        setDeptCodeToEdit(record.department_code);
-                                                    }}
-                                                    sx={{ padding: 0 }}
-                                                >
-                                                    <img src="editIcon.jpg" alt="Edit" className="size-8 flex-shrink-0 hover:cursor-pointer" />
-                                                </IconButton>
-                                                <IconButton
-                                                    onClick={() => deleteRows(record.department_code)}
-                                                    sx={{ padding: 0 }}
-                                                >
-                                                    <img src="deleteIcon.jpg" alt="Edit" className="size-8 flex-shrink-0 hover:cursor-pointer" />
-                                                </IconButton>
-                                            </Box>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+                <Box sx={{ flex: 1, minHeight: 0, width: '100%', overflow: 'hidden' }}>
+                    <DataGrid
+                        rows={Array.isArray(tableContent.results) ? tableContent.results.map((row) => ({
+                            id: row.department_code,
+                            ...row,
+                        })) : []}
+                        columns={columns}
+                        pageSizeOptions={[5, 10, 25]}
+                        paginationMode="server"
+                        rowCount={tableContent.count || 0}
+                        paginationModel={{ page: pageNumber - 1, pageSize }}
+                        onPaginationModelChange={(model) => {
+                            setPageNumber(model.page + 1);
+                            setPageSize(model.pageSize);
+                        }}
+                        disableRowSelectionOnClick
+                        sx={{
+                            '& .MuiDataGrid-root': {
+                                fontSize: '0.875rem',
+                                fontFamily: 'sans-serif',
+                                width: '100%',
+                                height: '100%',
+                            },
+                            '& .MuiDataGrid-main': {
+                                width: '100%',
+                                overflow: 'hidden',
+                            },
+                            '& .MuiDataGrid-columnHeaders': {
+                                backgroundColor: '#f5f5f5',
+                                color: '#616161',
+                                fontWeight: 'medium',
+                                minWidth: 0,
+                                overflow: 'hidden',
+                            },
+                            '& .MuiDataGrid-cell': {
+                                padding: '0.5rem 0.75rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                            },
+                            '& .MuiDataGrid-row:hover': {
+                                backgroundColor: '#f5f5f5',
+                            },
+                            '& .MuiDataGrid-virtualScroller': {
+                                overflowX: 'hidden',
+                                overflowY: 'auto',
+                            },
+                            '& .MuiDataGrid-container--top': {
+                                overflow: 'hidden',
+                            },
+                            '& .MuiDataGrid-footerContainer': {
+                                minWidth: 0,
+                                overflow: 'hidden',
+                            },
+                            border: 'none',
+                            width: '100%',
+                        }}
+                    />
+                </Box>
             </section>
         </main>
     );

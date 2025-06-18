@@ -12,25 +12,21 @@ import {
   Checkbox,
   FormControlLabel,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   IconButton,
-  InputAdornment
+  InputAdornment,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import { DataGrid } from '@mui/x-data-grid';
 
 
 function MUIIssueCategory() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [issueCodeToEdit, setIssueCodeToEdit] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
-  const [tableContent, setTableContent] = useState({ results: [] });
+  const [pageSize, setPageSize] = useState(5);
+  const [tableContent, setTableContent] = useState({ results: [], count: 0 });
   const [departments, setDepartments] = useState([]);
+  const [selectedRows, setSelectedRows] = useState([]);
 
   const {
     register,
@@ -60,11 +56,15 @@ function MUIIssueCategory() {
 
   const fetchRows = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}${ISSUE_CATEGORY_URL}?page=${pageNumber}`);
-      setTableContent(response.data);
+      const response = await axios.get(`${BASE_URL}${ISSUE_CATEGORY_URL}?limit=${pageSize}&offset=${(pageNumber - 1) * pageSize}`);
+      setTableContent({
+        results: response.data.results || [],
+        count: response.data.count || 0,
+      });
       console.log('Table Content:', response.data);
     } catch (error) {
       console.error('Error fetching rows:', error.response?.statusText || error.message);
+      setTableContent({ results: [], count: 0 });
     }
   };
 
@@ -134,10 +134,122 @@ function MUIIssueCategory() {
     }
   };
 
+  const handleSelectAll = (event) => {
+    if (event.target.checked) {
+      const allRowIds = tableContent.results.map((row) => row.issue_category_code);
+      setSelectedRows(allRowIds);
+    } else {
+      setSelectedRows([]);
+    }
+  };
+
+  const handleRowSelect = (issue_category_code) => {
+    setSelectedRows((prev) =>
+      prev.includes(issue_category_code)
+        ? prev.filter((id) => id !== issue_category_code)
+        : [...prev, issue_category_code]
+    );
+  };
+
   useEffect(() => {
     fetchDepartments();
     fetchRows();
-  }, [pageNumber]);
+  }, [pageNumber, pageSize]);
+
+  const columns = [
+    {
+      field: 'select',
+      headerName: '',
+      width: 70,
+      headerAlign: 'center',
+      align: 'center',
+      sortable: false,
+      filterable: false,
+      disableColumnMenu: true,
+      renderHeader: () => (
+        <Checkbox
+          checked={
+            tableContent.results.length > 0 &&
+            tableContent.results.every((row) =>
+              selectedRows.includes(row.issue_category_code)
+            )
+          }
+          onChange={handleSelectAll}
+          sx={{
+            color: '#04B7B1',
+            '&.Mui-checked': { color: '#04B7B1' },
+            transform: 'scale(1)',
+          }}
+        />
+      ),
+      renderCell: (params) => (
+        <Checkbox
+          checked={selectedRows.includes(params.row.issue_category_code)}
+          onChange={() => handleRowSelect(params.row.issue_category_code)}
+          sx={{
+            color: '#04B7B1',
+            '&.Mui-checked': { color: '#04B7B1' },
+            transform: 'scale(1)',
+          }}
+        />
+      ),
+    },
+    {
+      field: 'issue_category_code',
+      headerName: 'Issue Category Code',
+      flex: 1,
+      minWidth: 130,
+      renderCell: (params) => <div style={{ fontSize: '0.875rem', color: '#616161' }}>{params.value}</div>,
+    },
+    {
+      field: 'department_name',
+      headerName: 'Department Name',
+      flex: 1,
+      minWidth: 150,
+      renderCell: (params) => <div style={{ fontSize: '0.875rem', color: '#616161' }}>{params.value}</div>,
+    },
+    {
+      field: 'issue_category_name',
+      headerName: 'Issue Category Name',
+      flex: 1,
+      minWidth: 150,
+      renderCell: (params) => <div style={{ fontSize: '0.875rem', color: '#616161' }}>{params.value}</div>,
+    },
+    {
+      field: 'actions',
+      headerName: 'Actions',
+      headerAlign: 'center',
+      align: 'center',
+      width: 150,
+      renderCell: (params) => (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <IconButton
+            onClick={() => {
+              setIsEditMode(true);
+              reset({
+                issue_category_code: params.row.issue_category_code,
+                issue_category_name: params.row.issue_category_name,
+                department_name: params.row.department_name,
+                status: params.row.status === 'active',
+              });
+              setIssueCodeToEdit(params.row.issue_category_code);
+            }}
+            sx={{ padding: 1 }}
+          >
+            <img src="editIcon.jpg" alt="Edit" className="size-8 flex-shrink-0 hover:cursor-pointer" />
+          </IconButton>
+          <IconButton
+            onClick={() => deleteRows(params.row.issue_category_code)}
+            sx={{ padding: 0 }}
+          >
+            <img src="deleteIcon.jpg" alt="Delete" className="size-8 flex-shrink-0 hover:cursor-pointer" />
+          </IconButton>
+        </Box>
+      ),
+      sortable: false,
+      filterable: false,
+    },
+  ];
 
   return (
     <main className="w-screen h-screen flex flex-col gap-y-4 p-4 font-sans">
@@ -281,117 +393,96 @@ function MUIIssueCategory() {
           </Box>
         </form>
       </Box>
-      <Box component="section" className="w-[98%] ml-4 flex flex-col rounded-md bg-white flex-1 min-h-0">
-        <Box sx={{ height: 56, width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 2, my: 1, pr: 3 }}>
-                    <TextField
-                        variant='standard'
-                        size='small'
-                        placeholder='Search'
-                        sx={{ 
-                            width: '20%',
-                            '& .MuiInput-root': {
-                                borderBottom: '1px solid rgba(0, 0, 0, 0.42)',
-                                '&:hover': {
-                                    borderBottom: '1px solid rgba(0, 0, 0, 0.87)',
-                                },
-                                '&.Mui-focused': {
-                                    borderBottom: '2px solid #1976d2',
-                                },
-                            },
-                            '& .MuiInput-root:before': { borderBottom: 'none' },
-                            '& .MuiInput-root:after': { borderBottom: 'none' },
-                            '& .MuiInput-root:hover:not(.Mui-disabled):before': { borderBottom: 'none' },
-                        }}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <SearchIcon sx={{ color: 'text.secondary' }} />
-                                </InputAdornment>
-                            ),
-                        }}
-                    />
-                </Box>
-        <Box className="flex flex-col flex-1 min-h top-10">
-          <TableContainer component={Paper} className="flex flex-col flex-1 min-h-0 font-sans">
-            <Table className="table-fixed w-full">
-              <TableHead>
-                <TableRow sx={{ backgroundColor: '#FAF9F9', height: '50px' }}>
-                  <TableCell className="w-[3%] px-4 py-3" sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
-                    <Checkbox sx={{ color: 'primary.main', '&.Mui-checked': { color: 'primary.main' } }} />
-                  </TableCell>
-                  <TableCell className="text-sm w-[17%]" sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
-                    Issue Category Code
-                  </TableCell>
-                  <TableCell className="text-sm w-[19%]" sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
-                    Department Name
-                  </TableCell>
-                  <TableCell className="text-sm w-[20%]" sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
-                    Issue Category Name
-                  </TableCell>
-                  <TableCell className="text-sm w-[3.5%] pl-3" sx={{ padding: '0 0.75rem', fontSize: '0.875rem', fontWeight: 'medium', color: '#616161' }}>
-                    Actions
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody sx={{ color: '#6B7280' }}>
-                {Array.isArray(tableContent.results) && tableContent.results.length > 0 ? (
-                  tableContent.results.map((record, index) => (
-                    <TableRow
-                      key={record.issue_category_code + index}
-                      sx={{
-                        '&:hover': { backgroundColor: '#FAF9F9' },
-                        borderBottom: '1px solid #E5E7EB',
-                      }}
-                    >
-                      <TableCell sx={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', color: '#616161' }}>
-                        <Checkbox sx={{ color: 'primary.main', '&.Mui-checked': { color: 'primary.main' } }} />
-                      </TableCell>
-                      <TableCell sx={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', color: '#616161' }}>
-                        {record.issue_category_code}
-                      </TableCell>
-                      <TableCell sx={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', color: '#616161' }}>
-                        {record.department_name}
-                      </TableCell>
-                      <TableCell sx={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', color: '#616161' }}>
-                        {record.issue_category_name}
-                      </TableCell>
-                      <TableCell sx={{ padding: '0.5rem 0.75rem', fontSize: '0.875rem', color: '#616161' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <IconButton
-                            onClick={() => {
-                              setIsEditMode(true);
-                              reset({
-                                issue_category_code: record.issue_category_code,
-                                issue_category_name: record.issue_category_name,
-                                department_name: record.department_name,
-                                status: record.status === 'active',
-                              });
-                              setIssueCodeToEdit(record.issue_category_code);
-                            }}
-                            sx={{ padding: 0 }}
-                          >
-                            <img src="editIcon.jpg" alt="Edit" className="size-8 flex-shrink-0 hover:cursor-pointer" />
-                          </IconButton>
-                          <IconButton
-                            onClick={() => deleteRows(record.issue_category_code)}
-                            sx={{ padding: 0 }}
-                          >
-                            <img src="deleteIcon.jpg" alt="Delete" className="size-8 flex-shrink-0 hover:cursor-pointer" />
-                          </IconButton>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} sx={{ textAlign: 'center', padding: '1rem', color: '#6B7280' }}>
-                      No data available
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+      <Box component="section" className="w-[100%] flex flex-col rounded-md bg-white flex-1 min-h-0">
+        <Box sx={{ height: 56, width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 2, pt: 1, pr: 3 }}>
+          <TextField
+            variant="standard"
+            size="small"
+            placeholder="Search"
+            sx={{
+              width: '20%',
+              '& .MuiInput-root': {
+                borderBottom: '1px solid rgba(0, 0, 0, 0.42)',
+                '&:hover': {
+                  borderBottom: '1px solid rgba(0, 0, 0, 0.87)',
+                },
+                '&.Mui-focused': {
+                  borderBottom: '2px solid #1976d2',
+                },
+              },
+              '& .MuiInput-root:before': { borderBottom: 'none' },
+              '& .MuiInput-root:after': { borderBottom: 'none' },
+              '& .MuiInput-root:hover:not(.Mui-disabled):before': { borderBottom: 'none' },
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'text.secondary' }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
+        <Box sx={{ flex: 1, minHeight: 0, width: '100%', overflow: 'hidden' }}>
+          <DataGrid
+            rows={Array.isArray(tableContent.results) ? tableContent.results.map((row) => ({
+              id: row.issue_category_code,
+              ...row,
+            })) : []}
+            columns={columns}
+            pageSizeOptions={[5, 10, 25, 50, 100]}
+            paginationMode="server"
+            rowCount={tableContent.count || 0}
+            paginationModel={{ page: pageNumber - 1, pageSize }}
+            onPaginationModelChange={(model) => {
+              setPageNumber(model.page + 1);
+              setPageSize(model.pageSize);
+            }}
+            disableRowSelectionOnClick
+            sx={{
+              '& .MuiDataGrid-root': {
+                fontSize: '0.875rem',
+                fontFamily: 'sans-serif',
+                width: '100%',
+                height: '100%',
+              },
+              '& .MuiDataGrid-main': {
+                width: '100%',
+                overflow: 'hidden',
+              },
+              '& .MuiDataGrid-columnHeaders': {
+                backgroundColor: '#f5f5f5',
+                color: '#616161',
+                fontWeight: 'medium',
+                minWidth: 0,
+                overflow: 'hidden',
+              },
+              '& .MuiDataGrid-cell': {
+                padding: '0.5rem 0.75rem',
+                display: 'flex',
+                alignItems: 'center',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              },
+              '& .MuiDataGrid-row:hover': {
+                backgroundColor: '#f5f5f5',
+              },
+              '& .MuiDataGrid-virtualScroller': {
+                overflowX: 'hidden',
+                overflowY: 'auto',
+              },
+              '& .MuiDataGrid-container--top': {
+                overflow: 'hidden',
+              },
+              '& .MuiDataGrid-footerContainer': {
+                minWidth: 0,
+                overflow: 'hidden',
+              },
+              border: 'none',
+              width: '100%',
+            }}
+          />
         </Box>
       </Box>
     </main>
