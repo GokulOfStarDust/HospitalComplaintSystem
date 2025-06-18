@@ -43,13 +43,8 @@
   const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
-    setSearchParams({
-      priority: filters.priority,
-      date: filters.date,
-      end_time: filters.end_time,
-      start_time: filters.start_time,
-    });
-  }, [filters]);
+    fetchRows();
+  }, [searchParams]);
     // Fetch data from API
     const fetchRows = async () => {
       setIsLoading(true);
@@ -273,8 +268,8 @@
                     fullWidth
                     slotProps={{ inputLabel: { shrink: true } }}
                     sx={{ mb: 2, mt:4 }}
-                    value={filters.submitted_at}
-                    onChange={(e) => setFilters({...filters, submitted_at : e.target.value})}
+                    value={filters.date}
+                    onChange={(e) => setFilters({...filters, date : e.target.value})}
                   />
 
                    <TextField
@@ -326,6 +321,12 @@
                           end_time: '',
                           start_time: '',
                         });
+                        setSearchParams({
+                          priority: '',
+                          date: '',
+                          end_time: '', 
+                          start_time: '',
+                        });
                         fetchRows();
                         setPage(0); // Reset to first page on filter application
                         console.log("Filters cleared:", filters);
@@ -338,7 +339,12 @@
                       fullWidth
                       sx={{ mt: 3, color: 'white' }}
                       onClick={() => {
-                          console.log(filters);
+                          setSearchParams({
+                            priority: filters.priority,
+                            date: filters.date,
+                            end_time: filters.end_time,
+                            start_time: filters.start_time,
+                          });
                           fetchRows();
                           setPage(0); // Reset to first page on filter application
                         setDrawerOpen(false);
