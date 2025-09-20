@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import MUITicketDetailForm from './MUITicketDetailForm';
-import axios from 'axios';
+import axiosInstance from './api/axiosInstance';
 import { BASE_URL, COMPLAINT_URL, ISSUE_CATEGORY_URL, DEPARTMENT_URL } from './Url';
 import { MoreVert } from '@mui/icons-material';
 import eyeViewIcon from '../assets/images/eyeViewIcon.svg';
@@ -81,13 +81,14 @@ function MUITicketSystem() {
         ...filterParams,
       };
 
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         `${BASE_URL}${COMPLAINT_URL}`,
         {
           params,
           headers: {
             'Content-Type': 'application/json',
           },
+          withCredentials: true, // <-- Add this line
         }
       );
       setTableContent(response.data);
@@ -106,9 +107,9 @@ function MUITicketSystem() {
         offset: paginationModel.page * paginationModel.pageSize,
         queryString: searchQuery || '',
       };
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         `${BASE_URL}${COMPLAINT_URL}`,
-        { params }
+        { params, withCredentials: true } // <-- Add here
       );
       setTableContent(response.data);
       fetchIssues();
@@ -121,12 +122,13 @@ function MUITicketSystem() {
 
   const fetchIssues = async () => {
     try {
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         `${BASE_URL}${ISSUE_CATEGORY_URL}`,
         {
           headers: {
             'Content-Type': 'application/json',
           },
+          withCredentials: true, // <-- Add here
         }
       );
       setIssues(response.data.results);
@@ -137,12 +139,13 @@ function MUITicketSystem() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         `${BASE_URL}${DEPARTMENT_URL}`,
         {
           headers: {
             'Content-Type': 'application/json',
           },
+          withCredentials: true, // <-- Add here
         }
       );
       setDepartments(response.data.results);
@@ -153,12 +156,13 @@ function MUITicketSystem() {
 
   const deleteRows = async (ticketId) => {
     try {
-      await axios.delete(
+      await axiosInstance.delete(
         `${BASE_URL}${COMPLAINT_URL}${ticketId}/`,
         {
           headers: {
             'Content-Type': 'application/json',
           },
+          withCredentials: true, // <-- Add here
         }
       );
       console.log('Row deleted:', ticketId);
@@ -218,25 +222,25 @@ function MUITicketSystem() {
       renderCell: (params) => (
         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
           <Typography variant="body2">{params.row.room_number}</Typography>
-          <Typography variant="caption" color="text.secondary">{params.row.ward}</Typography>
+          <Typography variant="caption" color="text.secondary">{params.row.room.ward}</Typography>
         </Box>
       ),
     },
     {
-      field: 'submitted_by',
-      headerName: 'Submitted By',
+      field: 'submitted_at',
+      headerName: 'Submitted At',
       width: 180,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-          <Typography variant="body2">{params.row.submitted_by}</Typography>
-          <Typography variant="caption" color="text.secondary">
-            {new Date(params.row.submitted_at).toLocaleDateString()} | {new Date(params.row.submitted_at).toLocaleTimeString()}
+          <Typography variant="body2">{new Date(params.row.submitted_at).toLocaleDateString()}</Typography>
+          <Typography variant="body2">
+            {new Date(params.row.submitted_at).toLocaleTimeString()}
           </Typography>
         </Box>
       ),
     },
     { field: 'issue_type', headerName: 'Issue Type', minWidth: 156 },
-    { field: 'description', headerName: 'Issue Description', width: 350 },
+    { field: 'description', headerName: 'Issue Description', width: 300 },
     { field: 'status', headerName: 'Ticket Status', width: 150 },
     { field: 'assigned_department', headerName: 'Assigned Department', width: 200 },
     {
@@ -282,10 +286,10 @@ function MUITicketSystem() {
       renderCell: (params) => (
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'start' }}>
           <Typography variant="body2" color="text.secondary">
-            {params.row.resolved_by || 'Person'}
+            {params.row.resolved_by || 'NA'}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            {params.row.resolved_on || '01/01/2024'}
+            {params.row.resolved_at ? new Date(params.row.resolved_at).toLocaleDateString() : '-'} / {params.row.resolved_at ? new Date(params.row.resolved_at).toLocaleTimeString() : '-'}
           </Typography>
         </Box>
       ),
@@ -325,7 +329,7 @@ function MUITicketSystem() {
   ];
 
   return (
-    <main className="flex flex-col overflow-x-hidden h-screen">
+    <main className="flex flex-col self-start overflow-x-hidden h-[97%] w-[96%]">
       <Box component="section" sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 2, rowGap: 5, columnGap: 1 }}>
         <Box
           sx={{
@@ -363,7 +367,7 @@ function MUITicketSystem() {
           }}
         >
           <Typography variant="h6" fontWeight="600">
-            {tableContent.results?.filter((row) => row.status === 'resolved').length || 0}
+            {tableContent.results?.filter((row) => row.status === 'resolved' || row.status === 'closed').length || 0}
           </Typography>
           <Typography variant="caption" color="text.secondary">
             Resolved Tickets
@@ -488,8 +492,8 @@ function MUITicketSystem() {
         </Box>
       </Box>
 
-      <Box component="section" sx={{ width: '98%', margin: 'auto', display: 'flex', flexDirection: 'column', borderRadius: '4px', bgcolor: 'white', flex: 1, minHeight: 0 }}>
-        <Box sx={{ height: 56, width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 2, my: 1, pr: 3 }}>
+      <Box component="section" sx={{ width: '98%',display: 'flex', flexDirection: 'column', alignItems: 'center' ,borderRadius: '4px', bgcolor: 'white', flex: 1, minHeight: 0,}}>
+        <Box sx={{ height: 40, width: '100%', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 2, my: 0.5, pr: 3 }}>
           <TextField
             variant="standard"
             size="small"
@@ -536,8 +540,8 @@ function MUITicketSystem() {
             pageSizeOptions={[10, 25, 50]}
             paginationMode="server"
             sx={{
-              height: '100%',
-              maxHeight: 'calc(100vh - 300px)', // Adjust based on header and filter heights
+              
+              maxHeight: '100%',
               border: 'none',
               '& .MuiDataGrid-columnHeaders': {
                 bgcolor: '#FAF9F9',
@@ -560,6 +564,10 @@ function MUITicketSystem() {
             },
               '& .MuiDataGrid-main': {
                 overflowY: 'auto',
+              },
+              '& .MuiDataGrid-footerContainer': {
+
+                backgroundColor: '#FAF9F9', // Match header background if desired
               },
             }}
             disableRowSelectionOnClick

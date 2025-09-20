@@ -13,6 +13,9 @@ export default {
         primary: '#04B7B1', // Twitter blue
         secondary: '#616161',
       },
+      animation: {
+        'spin-slow': 'spin 0.1s linear',
+      },
     },
   },
   plugins: [],

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import axios from 'axios';
-import { BASE_URL, DEPARTMENT_URL } from './Url';
+import axiosInstance from '../api/axiosInstance';
+import { BASE_URL, DEPARTMENT_URL } from '../Url';
 import { TextField, Button, Checkbox, FormControlLabel, Box, InputAdornment, IconButton } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import SearchIcon from '@mui/icons-material/Search';
-import editIcon from '../assets/images/editIcon.jpg';
-import deleteIcon from '../assets/images/deleteIcon.jpg';
+import editIcon from '../../assets/images/editIcon.jpg';
+import deleteIcon from '../../assets/images/deleteIcon.jpg';
 
 function MUIDepartments() {
     const [isEditMode, setIsEditMode] = useState(false);
@@ -37,7 +37,7 @@ function MUIDepartments() {
         data.status = data.status ? 'active' : 'inactive';
 
         try {
-            await axios({
+            await axiosInstance({
                 method: METHOD,
                 url: url,
                 data: data,
@@ -86,7 +86,7 @@ function MUIDepartments() {
 
     const fetchRows = async () => {
         try {
-            const response = await axios.get(`${BASE_URL}${DEPARTMENT_URL}?page=${pageNumber}&page_size=${pageSize}`);
+            const response = await axiosInstance.get(`${BASE_URL}${DEPARTMENT_URL}?page=${pageNumber}&page_size=${pageSize}`);
             setTableContent({
                 results: response.data.results,
                 count: response.data.count,
@@ -103,7 +103,7 @@ function MUIDepartments() {
 
     const deleteRows = async (department_code) => {
         try {
-            await axios.delete(`${BASE_URL}${DEPARTMENT_URL}${department_code}/`);
+            await axiosInstance.delete(`${BASE_URL}${DEPARTMENT_URL}${department_code}/`);
             console.log("Row deleted successfully");
             setTableContent((prev) => ({
                 ...prev,
@@ -204,7 +204,7 @@ function MUIDepartments() {
     ];
 
     return (
-        <main className="w-screen h-screen flex flex-col gap-y-4 p-4 font-sans">
+        <main className="w-screen h-[98%] flex flex-col gap-y-4 p-4 font-sans">
             <section className="w-[100%] flex flex-col rounded-md bg-white p-4">
                 <form className="flex flex-col gap-y-4 pt-3" onSubmit={handleSubmit(formDataHandler)}>
                     <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', gap: 2 }}>

@@ -1,8 +1,8 @@
-import React, { use, useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useNavigate } from 'react-router';
 import axios from 'axios';
-import { set, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { BASE_URL } from '../Url';
 import { COMPLAINT_URL, ISSUE_CATEGORY_URL } from '../Url';
 import '../../index.css'; 

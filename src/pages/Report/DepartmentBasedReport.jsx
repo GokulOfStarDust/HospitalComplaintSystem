@@ -1,5 +1,5 @@
   import React, { useState, useEffect, use } from 'react';
-  import axios from 'axios';
+  import axiosInstance from '../api/axiosInstance';
   import { BASE_URL, COMPLAINT_URL } from '../Url';
   import { TextField, Button , IconButton, Box, Typography, InputAdornment, Divider, MenuItem } from '@mui/material';
   import Drawer from '@mui/material/Drawer';
@@ -10,18 +10,21 @@
   import { REPORT_URL } from '../Url';
   import CloseIcon from '@mui/icons-material/Close';
   import CustomOverlay from './CustomOverlay';
+  import * as XLSX from 'xlsx';
+
 
   function DepartmentBasedReport() {
 
     const [page, setPage] = useState(0); // DataGrid uses 0-based page index
     const [pageSize, setPageSize] = useState(10);
     const [rows, setRows] = useState([]);
+    const [departments, setDepartments] = useState([]);
     const [rowCount, setRowCount] = useState(0); // Total rows for pagination
     const [isLoading, setIsLoading] = useState(false);
     const [filterModel, setFilterModel] = useState({ items: [] });
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [filters, setFilters] = useState({
-      submitted_at: new Date(Date.now()).toISOString().split('T')[0] || '', // Default to today's date
+      submitted_at: '', // Default to today's date - new Date(Date.now()).toISOString().split('T')[0] || 
       priority: '',
       department: '',
     });
@@ -32,7 +35,7 @@
     });
 
   const columns = [
-    { field: 'assigned_department', headerName: 'Department', flex: 1.5, minWidth: 150 , cellClassName: 'department-column', headerClassName: 'department-header'},
+    { field: 'department_name', headerName: 'Department', flex: 1.5, minWidth: 150 , cellClassName: 'department-column', headerClassName: 'department-header'},
     { field: 'priority', headerName: 'Priority', flex: 1, minWidth: 200 },
     { field: 'total_tickets', headerName: 'Total Tickets', flex: 1, minWidth: 200,  },
     { field: 'resolved', headerName: 'Resolved', flex: 1, minWidth: 200},
@@ -71,7 +74,7 @@
         params.department = filters.department || '';
         console.log("API Request Parameters:", params);
 
-        const response = await axios.get(`${BASE_URL}${REPORT_URL}`, { params });
+        const response = await axiosInstance.get(`${BASE_URL}${REPORT_URL}`, { params });
         const data = response.data;
         console.log("API Response Data:", data);
 
@@ -84,10 +87,11 @@
         const formattedRows = Array.isArray(data.results) ? data.results.map((item, index) => ({
           id: item.department_code || `${item.assigned_department}-${index}`, // DataGrid requires unique 'id'
           assigned_department: item.assigned_department,
+          department_name: item.department_name || 'N/A',
           priority: item.priority,
           total_tickets: item.total_tickets || 0,
-          resolved: item.resolved || 0,
-          pending: item.open_tickets || 0,
+          resolved: item.resolved_tickets || 0,
+          pending: item.pending_tickets || 0,
         })) : [];
 
 
@@ -118,6 +122,22 @@
 
     }, [rows]);
 
+    const fetchDepartments = async () => {
+      try {
+        const response = await axiosInstance.get(`${BASE_URL}api/departments/`);
+        const data = response.data;
+        setDepartments(data.results || []);
+        console.log("Departments Data:", data.results);
+        // You can set this data to state if you want to use it in a dropdown
+      } catch (error) {
+        console.error('Error fetching departments:', error.response?.statusText || error.message);
+      }
+    }
+
+    useEffect(() => {
+      fetchDepartments();
+    }, []);
+
 
     // Fetch data when page, pageSize, or filterModel changes
     useEffect(() => {
@@ -136,7 +156,7 @@
 
 
       return (
-          <main className='w-screen h-screen flex flex-col gap-y-0 p-4 font-sans'>
+          <main className='w-screen h-[98%] flex flex-col gap-y-0 p-4 font-sans'>
                 <Box component="section" sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 2, rowGap: 5 , columnGap: 1}}>
                     <Box
                       sx={{
@@ -206,15 +226,22 @@
 
 
 
-              <section className='w-[98%] ml-4 flex flex-col rounded-md bg-white flex-1 min-h-0 shadow-xl'>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', p: 2 , position: 'absolute', right: 25, top: 80, zIndex: 1, columnGap: 0.8 }}>
+              <section className='w-[98%]  ml-4 flex flex-col rounded-md bg-white flex-1 min-h-0 shadow-xl'>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', p: 2 , position: 'absolute', right: 25, top: 200, zIndex: 1 }}>
                   <IconButton 
                   onClick={() => setDrawerOpen(true)}
                   sx={{border: '1px solid #616161', borderRadius: '4px', marginRight: '8px', padding: 0.6}}>
                     <FilterListIcon sx={{color: '#616161'}} />
                   </IconButton>
                   
-                  <IconButton sx={{border: '1px solid #616161', borderRadius: '4px', marginRight: '8px', padding: 0.6}}>
+                  <IconButton sx={{border: '1px solid #616161', borderRadius: '4px', marginRight: '8px', padding: 0.6}}
+                  onClick={() => {
+                    const worksheet = XLSX.utils.json_to_sheet(rows);
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, 'Department Report');
+                    XLSX.writeFile(workbook, 'department_report.xlsx');
+                  }}
+                  >
                     <PrintIcon sx={{color: '#616161'}}/>
                   </IconButton>
                 </Box>
@@ -319,11 +346,13 @@
                     value={filters.department}
                     onChange={(e) => setFilters({...filters, department: e.target.value})}
                   >
-                    <MenuItem value="">All</MenuItem>
-                    <MenuItem value="IT Admin">IT Admin</MenuItem>
-                    <MenuItem value="Maintenance">Maintenance</MenuItem>
-                    <MenuItem value="Medical">Medical</MenuItem>
-                    {/* Add more departments as needed */}
+                    <MenuItem value=''>All</MenuItem>
+                    {departments.map((dept) => (
+                      <MenuItem key={dept.department_code} value={dept.department_code}>
+                        {dept.department_name}
+                      </MenuItem>
+                    ))}
+                    
                   </TextField>
                               
                   {/* Apply Filters Button */}

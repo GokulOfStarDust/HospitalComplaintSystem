@@ -1,15 +1,16 @@
-  import { useState, useEffect } from 'react';
-  import axios from 'axios';
-  import { BASE_URL, TICKET_TAT_URL  } from '../Url';
-  import { TextField, Button , IconButton, Box, Typography, InputAdornment, Divider, MenuItem } from '@mui/material';
-  import Drawer from '@mui/material/Drawer';
-  import PrintIcon from '@mui/icons-material/Print';
-  import FilterListIcon from '@mui/icons-material/FilterList';
-  import { useSearchParams } from 'react-router-dom';
-  import { DataGrid } from '@mui/x-data-grid';
-  import CloseIcon from '@mui/icons-material/Close';
-  import CustomOverlay from './CustomOverlay';
-  import { format, parse, isValid } from 'date-fns';
+import { useState, useEffect } from 'react';
+import axiosInstance from '../api/axiosInstance';
+import { BASE_URL, TICKET_TAT_URL  } from '../Url';
+import { TextField, Button , IconButton, Box, Typography, InputAdornment, Divider, MenuItem } from '@mui/material';
+import Drawer from '@mui/material/Drawer';
+import PrintIcon from '@mui/icons-material/Print';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import { useSearchParams } from 'react-router-dom';
+import { DataGrid } from '@mui/x-data-grid';
+import CloseIcon from '@mui/icons-material/Close';
+import CustomOverlay from './CustomOverlay';
+import { format, parse, isValid } from 'date-fns';
+import * as XLSX from 'xlsx';
 
 
   function TicketTATReport() {
@@ -70,7 +71,7 @@
         params.end_time = convertTimeToUTC(filters.end_time) || '';
         console.log("API Request Parameters:", params);
 
-        const response = await axios.get(`${BASE_URL}${TICKET_TAT_URL}`, { params });
+        const response = await axiosInstance.get(`${BASE_URL}${TICKET_TAT_URL}`, { params });
         const data = response.data;
         console.log("API Response Data:", data);
 
@@ -81,8 +82,8 @@
         // }
 
         const totalTickets =  data.total_tickets || 0;
-        const averageTAT = data.average_tat
-        
+        const averageTAT = (data.average_tat == '-' ? '0' : `${(data.average_tat).split(',')[0]} : ${(data.average_tat).split(',')[1]}`) || '0'; // Assuming average_tat is a string like "avg_tat,0" or "avg_tat,0.00"
+
         setTotals({
           totalTickets,
           averageTAT
@@ -93,13 +94,11 @@
           id: index + 1, // Unique ID for DataGrid
           ticket_id: item.ticket_id || 'N/A',
           submitted_at: new Date(item.submitted_at).toLocaleString('en-GB') || 'N/A',
-          resolved_at: item.resolved_at || 'N/A',
-          tat: item.tat || 'N/A',
+          resolved_at: item.resolved_at ? new Date(item.resolved_at).toLocaleString('en-GB') : 'N/A',
+          tat: (item.tat == '-' ? '-' : `${(item.tat).split(',')[0]} : ${(item.tat).split(',')[1]}`) || '-',
           priority: item.priority || 'N/A',
           status: item.status || 'N/A',
-          total_tickets: item.total_tickets || 0,
-          resolved: item.resolved || 0,
-          department: item.department || 'N/A', // Assuming department is part of the response
+          assigned_department: item.assigned_department || 'N/A',
         })) : [];
 
         setRows(formattedRows);
@@ -112,16 +111,20 @@
       }
     };
 
+    
+
 
     const convertTimeToUTC = (inputTime) => {
       if (!inputTime) return '';
+      console.log("Input Time:", inputTime);
       const date = filters.date || format(new Date(), 'yyyy-MM-dd');
       const localTimeInput = `${date}T${inputTime}:00+05:30`;
 
       const localDate = new Date(localTimeInput); // This respects the +05:30 offset
-
+      console.log("Local Date:", localDate);
       if (!isValid(localDate)) return '';
       // Return just the UTC time portion
+      console.log("Converted UTC Time:", localDate.toISOString().slice(11, 16));
       return localDate.toISOString().slice(11, 16); 
     };
 
@@ -140,7 +143,7 @@
 
 
       return (
-          <main className='w-screen h-screen flex flex-col gap-y-0 p-4 font-sans'>
+          <main className='w-screen h-[98%] flex flex-col gap-y-0 p-4 font-sans'>
                 <Box component="section" sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', p: 2, rowGap: 5 , columnGap: 1}}>
                     <Box
                       sx={{
@@ -190,14 +193,21 @@
 
 
               <section className='w-[98%] ml-4 flex flex-col rounded-md bg-white flex-1 min-h-0 shadow-xl'>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', p: 2 , position: 'absolute', right: 25, top: 80, zIndex: 1, columnGap: 0.8 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', p: 2 , position: 'absolute', right: 25, top: 200, zIndex: 1 }}>
                   <IconButton 
                   onClick={() => setDrawerOpen(true)}
                   sx={{border: '1px solid #616161', borderRadius: '4px', marginRight: '8px', padding: 0.6}}>
                     <FilterListIcon sx={{color: '#616161'}} />
                   </IconButton>
                   
-                  <IconButton sx={{border: '1px solid #616161', borderRadius: '4px', marginRight: '8px', padding: 0.6}}>
+                  <IconButton sx={{border: '1px solid #616161', borderRadius: '4px', marginRight: '8px', padding: 0.6}}
+                  onClick={() => {
+                    const worksheet = XLSX.utils.json_to_sheet(rows);
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, 'Department Report');
+                    XLSX.writeFile(workbook, 'department_report.xlsx');
+                  }}
+                  >
                     <PrintIcon sx={{color: '#616161'}}/>
                   </IconButton>
                 </Box>

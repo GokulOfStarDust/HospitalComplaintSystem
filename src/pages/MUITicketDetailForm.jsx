@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
-import axios from 'axios';
+import axiosInstance from './api/axiosInstance'; // ADD this line (adjust path if needed)
 import { BASE_URL, COMPLAINT_URL } from './Url';
 import ticketDetailFormEditIcon from '../assets/images/ticketDetailFormEditIcon.png';
 import closeIcon from '../assets/images/closeIcon.png';
@@ -31,11 +31,13 @@ const updateFormHandler = async (data, ticket_id, fetchRows, pageNumber) => {
     formData.append('description', data.description);
     formData.append('assigned_department', data.assigned_department);
     formData.append('assigned_staff', data.assigned_staff);
+    formData.append('status', data.status);
+    formData.append('remarks', data.remarks);
     data.images.forEach((file) => {
       formData.append('images', file);
     });
 
-    const response = await axios.patch(`${BASE_URL}${COMPLAINT_URL}${ticket_id}/`, formData, {
+    const response = await axiosInstance.patch(`${BASE_URL}${COMPLAINT_URL}${ticket_id}/`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -45,17 +47,31 @@ const updateFormHandler = async (data, ticket_id, fetchRows, pageNumber) => {
       alert('Ticket updated successfully!');
       fetchRows(pageNumber);
     } else {
-      alert(`Failed to update ticket: ${response.data.detail || 'Unknown error'}`);
+      alert(`Failed to update ticket: ${response || 'Unknown error'}`);
     }
   } catch (error) {
-    console.error('Error updating ticket:', error);
-    alert('An error occurred while updating the ticket.');
+    console.error('Error updating ticket:', error.response.data);
+    alert(error.response.data || 'An error occurred while updating the ticket.');
   }
 
   console.log('Update Data:', data);
 };
 
+
 function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRows, pageNumber, departments}) {
+
+  const fetchStaffs = async (department) => {
+    try{
+      const response = await axiosInstance.get(`http://localhost:8000/api/departments/${department}/staff/`,{ withCredentials: true })
+      console.log("Staffs", response.data.results)
+      setStaffs(response.data.results)
+
+    }
+    catch(error){
+      console.log("Failed to fetch tickets.")
+    } 
+  }
+
   console.log('Complaint Data:', complaintData);
   const [isEditable, setIsEditable] = useState(false);
   const [description, setDescription] = useState(complaintData.description || '');
@@ -66,6 +82,9 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
     }))
   );
   const [assignedDepartment, setAssignedDepartment] = useState(complaintData.assigned_department || '');
+  const [status, setStatus] = useState(complaintData.status || 'open');
+  const [remarks, setRemarks] = useState(complaintData.remarks || '');
+  const [staffs, setStaffs] = useState([])
   const [assignedStaff, setAssignedStaff] = useState(complaintData.assigned_staff || '');
   const statusStyles = {
   open: {
@@ -89,6 +108,11 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
     borderColor: 'warning.light',
   }
 };
+
+  useEffect(()=>{
+    fetchStaffs(assignedDepartment)
+  },[assignedDepartment])
+
 
 
   // Sample department and staff data (replace with actual data from your API)
@@ -155,7 +179,7 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
             />
           </Box>
           <Typography variant="caption" color="text.secondary" key="room-info-summary" sx={{ paddingLeft: 0.5 }}>
-            {complaintData.room_number} / {complaintData.block} / {complaintData.floor}
+            {complaintData.room.room_no} / {complaintData.room.Block} / {complaintData.Floor_no}
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }} key="edit-button">
@@ -190,7 +214,7 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
               Room info
             </Typography>
             <Typography variant="body1" sx={{ color: '#202020' }}>
-              {complaintData.room_number} / {complaintData.block} / {complaintData.floor}
+              {complaintData.room.room_no} / {complaintData.room.Block} / {complaintData.room.Floor_no}
             </Typography>
           </Box>
           <Box key="ward-speciality">
@@ -198,7 +222,7 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
               Ward / Speciality
             </Typography>
             <Typography variant="body1" sx={{ color: '#202020' }}>
-              {complaintData.ward} / {complaintData.speciality}
+              {complaintData.room.ward} / {complaintData.room.speciality}
             </Typography>
           </Box>
           <Box key="issue-type">
@@ -246,9 +270,10 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
                 >
                   <img className="p-3" src={photoIcon} alt="Photo Icon" key={`photo-icon-${index}`} />
                   <Link
-                    href={file.image || URL.createObjectURL(file)}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    onClick={() => {
+                      const url = file.image || URL.createObjectURL(file);
+                      window.open(url, '_blank', 'width=800,height=600');
+                    }}
                     sx={{
                       color: 'text.secondary',
                       width: '60%',
@@ -256,6 +281,7 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
                       textDecoration: 'none',
                       '&:hover': { textDecoration: 'underline', textDecorationThickness: '1px' },
                     }}
+                    className='hover:cursor-pointer'
                     key={`file-link-${index}`}
                   >
                     {file.name}
@@ -322,7 +348,7 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
               </FormControl>
             ) : (
               <Typography variant="body1" sx={{ color: '#202020' }}>
-                {complaintData.assigned_department || 'N/A'}
+                {assignedDepartment || 'N/A'}
               </Typography>
             )}
           </Box>
@@ -340,22 +366,75 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
                   sx={{ height: 45}}
                 >
                   <MenuItem value="">None</MenuItem>
-                  {assignedDepartment &&
-                    staffMembers[assignedDepartment]?.map((staff) => (
-                      <MenuItem key={staff} value={staff}>
-                        {staff}
+                  {staffs &&
+                   staffs?.map((staff) => (
+                      <MenuItem key={staff.id} value={staff.username}>
+                        {staff.username}
                       </MenuItem>
                     ))}
                 </Select>
               </FormControl>
             ) : (
               <Typography variant="body1" sx={{ color: '#202020' }}>
-                {complaintData.assigned_staff || 'N/A'}
+                {assignedStaff || 'N/A'}
               </Typography>
             )}
           </Box>
         </Box>
       </Box>
+
+      <Divider sx={{ borderColor: '#E5E7EB', borderWidth: '1px' }} />
+
+      <Box component="section" sx={{ display: 'flex', flexDirection: 'column', gap: 2, px: 3, py: 2.5, mb: 7 }} key="additional-section">
+        <Typography variant="h7" key="additional-title" sx={{ paddingBottom: 1 }}>
+          TICKET STATUS
+        </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }} key="details-grid">
+          <Box key="ward-speciality">
+            {/* <Typography variant="body2" color="text.secondary" sx={{paddingBottom: 0.5}}>
+              Ticket Status
+            </Typography> */}
+            {isEditable ? (
+              <FormControl sx={{ minWidth: 210, height: 20 }}>
+                <Select
+                  labelId="department-select-label"
+                  value={status}
+                  onChange={(e) => {
+                    setStatus(e.target.value);
+                  }}
+                  sx={{ height: 45 }}
+                >
+                  <MenuItem value="open" key="open">Open</MenuItem>
+                  <MenuItem value="in_progress" key="in_progress">In Progress</MenuItem>
+                  <MenuItem value="resolved" key="resolved">Resolved</MenuItem>
+                  <MenuItem value="closed" key="closed">Closed</MenuItem>
+                  <MenuItem value="on_hold" key="on_hold">On Hold</MenuItem>
+                </Select>
+              </FormControl>
+            ) : (
+              <Typography variant="body1" sx={{ color: '#202020' }}>
+                {status || 'N/A'}
+              </Typography>
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }} key="description-section">
+            <Typography variant="body2" color="text.secondary" key="description-label">
+              Remarks
+            </Typography>
+            <MDEditor
+              key="description-editor"
+              value={remarks}
+              onChange={(val) => setRemarks(val || '')}
+              preview="edit"
+              height={150}
+              data-color-mode="light"
+              className="w-[100%] md:w-[55%] rounded-md outline outline-[1px] outline-gray-300 p-2 bg-white"
+            />
+        </Box>
+        </Box>
+      </Box>
+
+      <Divider sx={{ borderColor: '#E5E7EB', borderWidth: '1px' }} />
 
       <Box
         component="section"
@@ -388,6 +467,7 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
                 boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
               }}
               onClick={() => {
+              
                 updateFormHandler(
                   {
                     ticket_id: complaintData.ticket_id,
@@ -395,11 +475,14 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
                     images: files,
                     assigned_department: assignedDepartment,
                     assigned_staff: assignedStaff,
+                    status,
+                    remarks
                   },
                   complaintData.ticket_id,
                   fetchRows,
                   pageNumber
                 );
+        
                 setIsEditable(false);
               }}
             >

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import axios from 'axios';
-import { BASE_URL, DEPARTMENT_URL, ISSUE_CATEGORY_URL } from './Url';
-import editIcon from '../assets/images/editIcon.jpg';
-import deleteIcon from '../assets/images/deleteIcon.jpg';
+import axiosInstance from '../api/axiosInstance';
+import { BASE_URL, DEPARTMENT_URL, ISSUE_CATEGORY_URL } from '../Url';
+import editIcon from '../../assets/images/editIcon.jpg';
+import deleteIcon from '../../assets/images/deleteIcon.jpg';
 import {
   Box,
   TextField,
@@ -48,7 +48,7 @@ function MUIIssueCategory() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}${DEPARTMENT_URL}`);
+      const response = await axiosInstance.get(`${BASE_URL}${DEPARTMENT_URL}`);
       setDepartments(response.data.results || response.data);
       console.log('Departments:', response.data.results || response.data);
     } catch (error) {
@@ -58,7 +58,7 @@ function MUIIssueCategory() {
 
   const fetchRows = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}${ISSUE_CATEGORY_URL}?limit=${pageSize}&offset=${(pageNumber - 1) * pageSize}`);
+      const response = await axiosInstance.get(`${BASE_URL}${ISSUE_CATEGORY_URL}?limit=${pageSize}&offset=${(pageNumber - 1) * pageSize}`);
       setTableContent({
         results: response.data.results || [],
         count: response.data.count || 0,
@@ -91,7 +91,7 @@ function MUIIssueCategory() {
     };
 
     try {
-      const response = await axios({
+      const response = await axiosInstance({
         method,
         url,
         data: payload,
@@ -127,7 +127,7 @@ function MUIIssueCategory() {
 
   const deleteRows = async (issue_category_code) => {
     try {
-      await axios.delete(`${BASE_URL}${ISSUE_CATEGORY_URL}${issue_category_code}/`);
+      await axiosInstance.delete(`${BASE_URL}${ISSUE_CATEGORY_URL}${issue_category_code}/`);
       console.log('Row deleted successfully');
       fetchRows();
     } catch (error) {
@@ -254,7 +254,7 @@ function MUIIssueCategory() {
   ];
 
   return (
-    <main className="w-screen h-screen flex flex-col gap-y-4 p-4 font-sans">
+    <main className="w-screen h-[98%] flex flex-col gap-y-4 p-4 font-sans">
       <Box component="section" className="w-[100%] flex flex-col rounded-md bg-white p-4">
         <form className="flex flex-col gap-y-4 pt-3" onSubmit={handleSubmit(formDataHandler)}>
           <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', gap: 2 }}>

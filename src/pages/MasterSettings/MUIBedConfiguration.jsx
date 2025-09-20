@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import axios from 'axios';
-import handleQRCodePrint, { QRCodePrinter } from './PrintQRCode';
-import DeleteIcon from '../assets/images/deleteIcon.jpg';
-import EditIcon from '../assets/images/editIcon.jpg';
+import axiosInstance from '../api/axiosInstance'; 
+import handleQRCodePrint, { QRCodePrinter } from '../PrintQRCode';
+import DeleteIcon from '../../assets/images/deleteIcon.jpg';
+import EditIcon from '../../assets/images/editIcon.jpg';
 import {
   TextField,
   Select,
@@ -19,7 +19,7 @@ import {
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { Edit, Delete, MoreVert } from '@mui/icons-material';
-import { BASE_URL, ROOMS_URL } from './Url';
+import { BASE_URL, ROOMS_URL } from '../Url';
 
 function MUIBedConfiguration() {
   const [roomQR, setRoomQRCode] = useState([]);
@@ -62,7 +62,7 @@ function MUIBedConfiguration() {
     data.status = data.status ? 'active' : 'inactive';
 
     try {
-      const response = await axios({
+      const response = await axiosInstance({
         method: METHOD,
         url: url,
         data: data,
@@ -100,7 +100,7 @@ function MUIBedConfiguration() {
         offset: pageNumber * pageSize,
       };
 
-      const response = await axios.get(`${BASE_URL}${ROOMS_URL}`, { params });
+      const response = await axiosInstance.get(`${BASE_URL}${ROOMS_URL}`, { params });
       const data = response.data || { results: [], count: 0 };
       setTableContent({
         results: data.results || [],
@@ -127,7 +127,7 @@ function MUIBedConfiguration() {
 
   const deleteRows = async (id) => {
     try {
-      await axios.delete(`${BASE_URL}${ROOMS_URL}${id}/`);
+      await axiosInstance.delete(`${BASE_URL}${ROOMS_URL}${id}/`);
       setRoomQRCode((prev) => prev.filter((item) => item?.id !== id));
       setTableContent((prev) => ({
         ...prev,
@@ -260,8 +260,8 @@ function MUIBedConfiguration() {
   ];
 
   return (
-    <main className="h-svh flex flex-row gap-x-4 justify-between items-center">
-      <section className="w-[70%] h-[85vh] flex flex-col justify-start rounded-xl bg-white">
+    <main className="h-[97%] w-full flex flex-row gap-x-4 justify-between items-center p-5 pt-10">
+      <section className="w-[70%] h-[80vh] flex flex-col justify-start rounded-xl bg-white">
         <QRCodePrinter roomQR={roomQR} />
         <DataGrid
           rows={tableContent.results}
@@ -304,11 +304,11 @@ function MUIBedConfiguration() {
         />
       </section>
 
-      <section className="flex flex-col justify-between w-[30%] h-[95vh] bg-white rounded-xl">
+      <section className="flex flex-col justify-start w-[30%] h-[80vh] bg-white rounded-xl">
         <div className="flex flex-col bg-[#FAF9F9] py-3 px-4 rounded-t-xl">
           <p className="font-sans text-secondary">Bed Configuration</p>
         </div>
-        <div className="p-4 -mt-[390px]">
+        <div className="p-4">
           <form id="bedForm" onSubmit={handleSubmit(formDataHandler)} className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-y-0">
               <Typography variant="body2" sx={{ mb: 0.5, color: '#616161' }}>
@@ -503,7 +503,7 @@ function MUIBedConfiguration() {
             </div>
           </form>
         </div>
-        <div className="flex flex-row items-center justify-center gap-x-2 bg-[#FAF9F9] p-2 rounded-b-xl">
+        <div className="flex flex-row items-center justify-center gap-x-2 bg-[#FAF9F9] p-2 mt-auto rounded-b-xl">
           {isEditable ? (
             <Button
               variant="outlined"

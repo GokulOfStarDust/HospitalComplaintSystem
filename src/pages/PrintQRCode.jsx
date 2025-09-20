@@ -1,3 +1,4 @@
+import axiosInstance from './api/axiosInstance';
 
 const handleQRCodePrint = (roomQR) => {
     const selectedQRs = roomQR.filter(item => item?.toPrint);
