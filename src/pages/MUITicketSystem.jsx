@@ -34,6 +34,7 @@ function MUITicketSystem() {
   const [issues, setIssues] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [selectedRows, setSelectedRows] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -94,9 +95,12 @@ function MUITicketSystem() {
       setTableContent(response.data);
       fetchIssues();
       fetchDepartments();
+      setIsLoading(false);  
       console.log('Rows fetched:', response.data);
     } catch (error) {
       console.error('Error fetching rows:', error.response?.statusText || error.message);
+      setTableContent({ results: [], count: 0 });
+      setIsLoading(false);
     }
   };
 
@@ -114,9 +118,11 @@ function MUITicketSystem() {
       setTableContent(response.data);
       fetchIssues();
       fetchDepartments();
+      setIsLoading(false);
       console.log('Rows fetched:', response.data);
     } catch (error) {
       console.error('Error fetching rows:', error.response?.statusText || error.message);
+      setIsLoading(false);
     }
   };
 
@@ -536,6 +542,7 @@ function MUITicketSystem() {
             rowCount={tableContent.count || 0}
             paginationModel={paginationModel}
             rowHeight={60}
+            loading={isLoading}
             onPaginationModelChange={setPaginationModel}
             pageSizeOptions={[10, 25, 50]}
             paginationMode="server"

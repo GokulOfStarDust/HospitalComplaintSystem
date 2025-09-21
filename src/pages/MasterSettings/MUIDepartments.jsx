@@ -16,6 +16,7 @@ function MUIDepartments() {
     const [activeCheckbox, setActiveCheckbox] = useState(false);
     const [pageSize, setPageSize] = useState(5);
     const [selectedRows, setSelectedRows] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
 
     const {
         control,
@@ -86,14 +87,18 @@ function MUIDepartments() {
 
     const fetchRows = async () => {
         try {
+            setIsLoading(true);
             const response = await axiosInstance.get(`${BASE_URL}${DEPARTMENT_URL}?page=${pageNumber}&page_size=${pageSize}`);
             setTableContent({
                 results: response.data.results,
                 count: response.data.count,
             });
+            setIsLoading(false);
+
             console.log("Table Content:", response.data);
         } catch (error) {
             console.error('Error fetching data:', error.response?.statusText || error.message);
+            setIsLoading(false);
         }
     };
 
@@ -360,6 +365,7 @@ function MUIDepartments() {
                         columns={columns}
                         pageSizeOptions={[5, 10, 25]}
                         paginationMode="server"
+                        loading={isLoading}
                         rowCount={tableContent.count || 0}
                         paginationModel={{ page: pageNumber - 1, pageSize }}
                         onPaginationModelChange={(model) => {

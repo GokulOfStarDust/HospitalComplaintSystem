@@ -29,6 +29,7 @@ function MUIIssueCategory() {
   const [tableContent, setTableContent] = useState({ results: [], count: 0 });
   const [departments, setDepartments] = useState([]);
   const [selectedRows, setSelectedRows] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const {
     register,
@@ -63,10 +64,12 @@ function MUIIssueCategory() {
         results: response.data.results || [],
         count: response.data.count || 0,
       });
+      setIsLoading(false);
       console.log('Table Content:', response.data);
     } catch (error) {
       console.error('Error fetching rows:', error.response?.statusText || error.message);
       setTableContent({ results: [], count: 0 });
+      setIsLoading(false);
     }
   };
 
@@ -435,6 +438,7 @@ function MUIIssueCategory() {
             pageSizeOptions={[5, 10, 25, 50, 100]}
             paginationMode="server"
             rowCount={tableContent.count || 0}
+            loading={isLoading}
             paginationModel={{ page: pageNumber - 1, pageSize }}
             onPaginationModelChange={(model) => {
               setPageNumber(model.page + 1);

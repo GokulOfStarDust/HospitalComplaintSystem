@@ -31,6 +31,7 @@ function MUIBedConfiguration() {
   const [masterChecked, setMasterChecked] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedRowId, setSelectedRowId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const defaultValues = {
     bed_no: '',
@@ -106,7 +107,7 @@ function MUIBedConfiguration() {
         results: data.results || [],
         count: data.count || 0,
       });
-
+      
       const dataForQr = (data.results || []).map((prop) => ({
         id: prop.id,
         qrCodeUrl: prop.qr_code,
@@ -119,9 +120,11 @@ function MUIBedConfiguration() {
         const newData = dataForQr.filter((item) => !existingIds.has(item.id));
         return [...prev, ...newData];
       });
+      setIsLoading(false);
     } catch (error) {
       console.error('Error fetching rows:', error.response?.statusText || error.message);
       setTableContent({ results: [], count: 0 });
+      setIsLoading(false);
     }
   };
 
@@ -269,6 +272,7 @@ function MUIBedConfiguration() {
           pageSizeOptions={[10, 25, 50]}
           rowCount={tableContent.count}
           rowHeight={64}
+          loading={isLoading}
           paginationMode="server"
           paginationModel={{ page: pageNumber, pageSize }}
           onPaginationModelChange={(newModel) => {
