@@ -23,6 +23,8 @@ import {
   MenuItem,
   InputLabel,
 } from '@mui/material';
+import useAuth from './Hooks/useAuth.jsx';
+
 
 const updateFormHandler = async (data, ticket_id, fetchRows, pageNumber) => {
   try {
@@ -59,6 +61,8 @@ const updateFormHandler = async (data, ticket_id, fetchRows, pageNumber) => {
 
 
 function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRows, pageNumber, departments}) {
+
+  const {isAdmin} = useAuth();
 
   const fetchStaffs = async (department) => {
     try{
@@ -240,9 +244,10 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
           </Typography>
           <MDEditor
             key="description-editor"
+            data-testid="description-editor"
             value={description}
             onChange={(val) => setDescription(val || '')}
-            preview="edit"
+            preview="preview"
             height={200}
             data-color-mode="light"
             className="w-[100%] md:w-[55%] rounded-md outline outline-[1px] outline-gray-300 p-2 bg-white"
@@ -385,16 +390,13 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
 
       <Divider sx={{ borderColor: '#E5E7EB', borderWidth: '1px' }} />
 
-      <Box component="section" sx={{ display: 'flex', flexDirection: 'column', gap: 2, px: 3, py: 2.5, mb: 7 }} key="additional-section">
-        <Typography variant="h7" key="additional-title" sx={{ paddingBottom: 1 }}>
-          TICKET STATUS
-        </Typography>
+      <Box component="section" sx={{ display: 'flex', flexDirection: 'column', gap: 2, px: 3, py: 2.5, mb: 7 }} key="ticket-status-section">
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }} key="details-grid">
           <Box key="ward-speciality">
             {/* <Typography variant="body2" color="text.secondary" sx={{paddingBottom: 0.5}}>
               Ticket Status
             </Typography> */}
-            {isEditable ? (
+            {(isEditable && !isAdmin) ? (
               <FormControl sx={{ minWidth: 210, height: 20 }}>
                 <Select
                   labelId="department-select-label"
@@ -422,10 +424,11 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
               Remarks
             </Typography>
             <MDEditor
-              key="description-editor"
+              key="remarks-editor"
+              data-testid="remarks-editor"
               value={remarks}
+              preview={isAdmin ? 'preview' : 'edit'}
               onChange={(val) => setRemarks(val || '')}
-              preview="edit"
               height={150}
               data-color-mode="light"
               className="w-[100%] md:w-[55%] rounded-md outline outline-[1px] outline-gray-300 p-2 bg-white"

@@ -48,7 +48,12 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await axios.post(`${BASE_URL}api/auth/logout/`);
+      setIsAuthenticated(false);
+      await axiosInstance.post(`${BASE_URL}api/auth/logout/`);
+      console.log("Logout successful");
+      setUser(null);
+      setIsAdmin(false);
+
     } finally {
       setIsAuthenticated(false);
     }

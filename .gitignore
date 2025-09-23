@@ -25,3 +25,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+tests/
+.url*
+babel.*
+complaint-system@*
+jest.*
+node
+NODE_ENV=test
+setupTests.js
