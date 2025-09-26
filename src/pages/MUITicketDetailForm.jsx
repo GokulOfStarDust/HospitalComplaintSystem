@@ -66,7 +66,7 @@ function MUITicketDetailForm({ complaintData, setViewTicket, viewTicket, fetchRo
 
   const fetchStaffs = async (department) => {
     try{
-      const response = await axiosInstance.get(`http://localhost:8000/api/departments/${department}/staff/`,{ withCredentials: true })
+      const response = await axiosInstance.get(`${BASE_URL}${DEPARTMENT_URL}${department}/staff/`,{ withCredentials: true })
       console.log("Staffs", response.data.results)
       setStaffs(response.data.results)
 

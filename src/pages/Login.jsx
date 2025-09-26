@@ -54,6 +54,7 @@ export default function Login() {
                 render={({ field, fieldState: { error } }) => (
                   <TextField
                     {...field}
+                    placeholder="Enter your username"
                     variant="outlined"
                     size="small"
                     fullWidth
@@ -76,6 +77,7 @@ export default function Login() {
                   <TextField
                     {...field}
                     type='password'
+                    placeholder="Enter your password"
                     variant="outlined"
                     size="small"
                     fullWidth
