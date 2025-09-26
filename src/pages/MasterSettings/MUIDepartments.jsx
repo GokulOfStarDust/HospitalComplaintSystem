@@ -77,13 +77,7 @@ function MUIDepartments() {
         );
     };
 
-    useEffect(() => {
-        reset({
-            department_code: '',
-            department_name: '',
-            status: false,
-        });
-    }, []);
+
 
     const fetchRows = async () => {
         try {
@@ -211,7 +205,7 @@ function MUIDepartments() {
     return (
         <main className="w-screen h-[98%] flex flex-col gap-y-4 p-4 font-sans">
             <section className="w-[100%] flex flex-col rounded-md bg-white p-4">
-                <form className="flex flex-col gap-y-4 pt-3" onSubmit={handleSubmit(formDataHandler)}>
+                <form data-testid="department-form" className="flex flex-col gap-y-4 pt-3" onSubmit={handleSubmit(formDataHandler)}>
                     <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'center', gap: 2 }}>
                         <Box sx={{ width: '15%', display: 'flex', flexDirection: 'column', gap: 1 }}>
                             <Controller

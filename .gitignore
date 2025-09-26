@@ -34,3 +34,4 @@ jest.*
 node
 NODE_ENV=test
 setupTests.js
+*.test.jsx

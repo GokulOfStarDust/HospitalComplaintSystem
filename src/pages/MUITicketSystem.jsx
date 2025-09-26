@@ -48,9 +48,30 @@ function MUITicketSystem() {
   };
 
   useEffect(() => {
+    const handler = setTimeout(() => {
+      if (searchQuery) {
+        searchParams.set('search', searchQuery);
+      } else {
+        searchParams.delete('search');
+      }
+      setSearchParams(searchParams);
+      setPaginationModel((prev) => ({ ...prev, page: 0 }));
+    }, 500); // Debounce search by 500ms
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery, setSearchParams]);
+
+  useEffect(() => {
     const filterParams = Object.fromEntries(searchParams.entries());
     fetchFilteredRows(filterParams);
   }, [searchParams, paginationModel]);
+
+  useEffect(() => {
+    fetchIssues();
+    fetchDepartments();
+  }, []);
 
 
   // Handle header checkbox toggle
@@ -79,6 +100,7 @@ function MUITicketSystem() {
       const params = {
         limit: paginationModel.pageSize,
         offset: paginationModel.page * paginationModel.pageSize,
+        search: filterParams.search || '',
         ...filterParams,
       };
 
@@ -88,9 +110,7 @@ function MUITicketSystem() {
           params,
           headers: {
             'Content-Type': 'application/json',
-          },
-          withCredentials: true, // <-- Add this line
-        }
+          }        }
       );
       setTableContent(response.data);
       fetchIssues();
@@ -116,8 +136,6 @@ function MUITicketSystem() {
         { params, withCredentials: true } // <-- Add here
       );
       setTableContent(response.data);
-      fetchIssues();
-      fetchDepartments();
       setIsLoading(false);
       console.log('Rows fetched:', response.data);
     } catch (error) {

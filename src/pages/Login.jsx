@@ -75,6 +75,7 @@ export default function Login() {
                 render={({ field, fieldState: { error } }) => (
                   <TextField
                     {...field}
+                    type='password'
                     variant="outlined"
                     size="small"
                     fullWidth
