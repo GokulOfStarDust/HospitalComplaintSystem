@@ -68,11 +68,6 @@ function MUITicketSystem() {
     fetchFilteredRows(filterParams);
   }, [searchParams, paginationModel]);
 
-  useEffect(() => {
-    fetchIssues();
-    fetchDepartments();
-  }, []);
-
 
   // Handle header checkbox toggle
   const handleSelectAll = (event) => {
