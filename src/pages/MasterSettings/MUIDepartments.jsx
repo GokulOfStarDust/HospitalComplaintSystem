@@ -38,10 +38,7 @@ function MUIDepartments() {
         data.status = data.status ? 'active' : 'inactive';
 
         try {
-            await axiosInstance({
-                method: METHOD,
-                url: url,
-                data: data,
+            await axiosInstance[METHOD](url, data, {
                 headers: {
                     'Content-Type': 'application/json',
                 },

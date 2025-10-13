@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import useAuth from './Hooks/useAuth.jsx';
@@ -11,7 +11,9 @@ import {
 } from '@mui/material';
 
 
-
+//normanamy, housekeeping123
+//nicholasjenkins, itsupport123
+//masonjames, electrical123
 
 export default function Login() {
     
@@ -29,6 +31,8 @@ export default function Login() {
     },
   });
 
+  const [loginError, setLoginError] = useState(null);
+
   const formDataHandler = async (data) => {
     console.log("Form Data:", data);
     try{
@@ -37,6 +41,7 @@ export default function Login() {
     }
     catch(err){
         console.log("Login Failed")
+        setLoginError('Invalid credentials. Please try again.');
     }
   }
 
@@ -88,8 +93,8 @@ export default function Login() {
                 )}
               />
             </div>
-
-            <div className="flex flex-row items-center p-2 rounded-b-xl">
+                 
+            <div className="flex flex-row items-center pt-4 rounded-b-xl">
                 <Button
                     type="submit"
                     form="loginForm"
@@ -106,8 +111,13 @@ export default function Login() {
                         Login
                 </Button>
             </div>
-           
+
+            <div className='col-span-2'>
+              {loginError && <Typography color="error">{loginError}</Typography>}
+            </div>
+
           </form>
+              
     </main>
   )
 }

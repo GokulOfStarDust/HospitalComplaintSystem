@@ -3,7 +3,7 @@ import MDEditor from '@uiw/react-md-editor';
 import '@uiw/react-md-editor/markdown-editor.css';
 import '@uiw/react-markdown-preview/markdown.css';
 import axiosInstance from './api/axiosInstance'; // ADD this line (adjust path if needed)
-import { BASE_URL, COMPLAINT_URL } from './Url';
+import { BASE_URL, COMPLAINT_URL, DEPARTMENT_URL } from './Url';
 import ticketDetailFormEditIcon from '../assets/images/ticketDetailFormEditIcon.png';
 import closeIcon from '../assets/images/closeIcon.png';
 import photoIcon from '../assets/images/photoIcon.svg';

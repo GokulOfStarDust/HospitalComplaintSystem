@@ -8,7 +8,7 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
 
   const [isAdmin, setIsAdmin] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(null); // null = unknown, true/false = known
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // false = not authenticated, true = authenticated
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
@@ -43,6 +43,7 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       setIsAuthenticated(false);
       console.error(err);
+      throw err;
     }
   };
 

@@ -250,7 +250,8 @@ function MUIBedConfiguration() {
             <MuiMenuItem onClick={handleMenuClose}>History</MuiMenuItem>
             <MuiMenuItem
               onClick={() => {
-                handleQRCodePrint([{ id: params.row.id, qrCodeUrl: params.row.qr_code, toPrint: true }]);
+                const roomDetail = tableContent.results.find(room => room.id === params.row.id);
+                handleQRCodePrint([{ id: params.row.id, qrCodeUrl: params.row.qr_code, toPrint: true }], [roomDetail]);
                 handleMenuClose();
               }}
             >
@@ -265,7 +266,7 @@ function MUIBedConfiguration() {
   return (
     <main className="h-[97%] w-full flex flex-row gap-x-4 justify-between items-center p-5 pt-10">
       <section className="w-[70%] h-[80vh] flex flex-col justify-start rounded-xl bg-white">
-        <QRCodePrinter roomQR={roomQR} />
+        <QRCodePrinter roomQR={roomQR} roomDetails={tableContent.results} />
         <DataGrid
           rows={tableContent.results}
           columns={columns}
